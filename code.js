@@ -1,3 +1,5 @@
+/* global AFRAME */
+
 function mulberry (a = Date.now()) {
   return function () {
     a += 0x6D2B79F5;
@@ -137,33 +139,73 @@ AFRAME.registerComponent('maze', {
       sceneEl.appendChild(newWallEl);
     }
 
-    const size = 5;
+    const cellSize = 5;
+    const wallSize = 1;
     let maze = new Grid(this.data.rows, this.data.cols);
-    console.log(`${maze}`);
     maze.binaryTree();
     console.log(`${maze}`);
     const grid = maze.grid;
 
     for (let row of grid) {
       for (let cell of row) {
-        const x1 = cell.column * size;
-        const x2 = (cell.column + 1) * size;
-        const z1 = cell.row * size;
-        const z2 = (cell.row + 1) * size;
+        const x1 = cell.column * cellSize;
+        const x2 = (cell.column + 1) * cellSize;
+        const z1 = cell.row * cellSize;
+        const z2 = (cell.row + 1) * cellSize;
         if (cell.north == null) {
-          for (let x = x1; x < x2; x++) { addBlock(x, 0, z1); }
+          for (let x = x1; x < x2; x = x + wallSize) { addBlock(x, 1, z1); }
         }
         if (cell.west == null) {
-          for (let z = z1; z < z2; z++) { addBlock(x1, 0, z); }
+          for (let z = z1; z < z2; z = z + wallSize) { addBlock(x1, 1, z); }
         }
         if (!cell.linked(cell.south)) {
-          for (let x = x1; x <= x2; x++) { addBlock(x, 0, z2); }
+          for (let x = x1; x <= x2; x = x + wallSize) { addBlock(x, 1, z2); }
         }
-        if (cell.column === maze.columns - 1 && cell.row === 0) { continue; } // opening
+        if (cell.column === maze.columns - 1 && cell.row === 0) { continue; } // wall opening
         if (!cell.linked(cell.east)) {
-          for (let z = z1; z <= z2; z++) { addBlock(x2, 0, z); }
+          for (let z = z1; z <= z2; z = z + wallSize) { addBlock(x2, 1, z); }
         }
       }
     }
   }
+});
+
+AFRAME.registerShader('ikeda', {
+  schema: {
+    color: { type: 'color', is: 'uniform', default: 'black' },
+    opacity: { type: 'number', is: 'uniform', default: 1.0 },
+    rnd: { type: 'number', is: 'uniform', default: srand() },
+    t: { type: 'time', is: 'uniform' }
+  },
+  raw: false,
+  fragmentShader:
+  `
+    precision mediump float;
+    varying vec2 vUv;
+
+    uniform vec3 color;
+    uniform float opacity;
+    uniform float rnd;
+    uniform float t;
+
+    void main () {
+      float time = t / 1000.0;
+      gl_FragColor = mix(
+        vec4(mod(vUv , 0.05) * rnd * 20.0, 1.0, 1.0),
+        vec4(color, 1.0),
+        sin(time)
+      );
+      // gl_FragColor = vec4(color, opacity);
+
+    }
+  `,
+  vertexShader:
+  `
+  varying vec2 vUv;
+
+  void main() {
+    vUv = uv;
+    gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+  }
+  `
 });

@@ -11,12 +11,13 @@
   <a-scene>
     <a-assets>
       <a-mixin id="wall"
-      geometry="primitive: box; height: 1; width: 1; depth: 1"
-      material="shader: standard"></a-mixin>
+      geometry="primitive: box; height: 2; width: 1; depth: 1"
+      material="shader: ikeda; color: black; opacity: 0.7"
+      ></a-mixin>
     </a-assets>
     <a-sky color="#ECECEC"></a-sky>
     <a-plane position="20 0 20" rotation="-90 0 0" width="60" height="60" color="#4FC65D"></a-plane>
-    <a-entity id="rig" position="25 50 25" rotation="-90 0 0">
+    <a-entity id="rig" position="25 0 25" rotation="0 0 0">
       <a-camera id="camera">
         <a-cursor></a-cursor>
       </a-camera>
