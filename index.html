@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>procprocprocproc</title>
+  <script src="https://js13kgames.com/webxr-src/aframe.js"></script>
+  <script></script> <!-- minified -->
+  <script src="code.js"></script> <!-- dev -->
+</head>
+<body>
+  <a-scene>
+    <a-assets>
+      <a-mixin id="wall"
+      geometry="primitive: box; height: 1; width: 1; depth: 1"
+      material="shader: standard"></a-mixin>
+    </a-assets>
+    <a-sky color="#ECECEC"></a-sky>
+    <a-plane position="20 0 20" rotation="-90 0 0" width="60" height="60" color="#4FC65D"></a-plane>
+    <a-entity id="rig" position="25 50 25" rotation="-90 0 0">
+      <a-camera id="camera">
+        <a-cursor></a-cursor>
+      </a-camera>
+    </a-entity>
+    <a-entity maze="rows: 8; cols: 8"></a-entity>
+  </a-scene>
+</body>
+</html>
