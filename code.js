@@ -170,6 +170,130 @@ AFRAME.registerComponent('maze', {
   }
 });
 
+AFRAME.registerComponent('drone', {
+  init: function () {
+    const steps = [ 0, 3, 5, 7, 10 ];
+
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+    const compressor = audioCtx.createDynamicsCompressor();
+    compressor.threshold.value = -50;
+    compressor.knee.value = 40;
+    compressor.ratio.value = 12;
+    compressor.attack.value = 0;
+    compressor.release.value = 0.25;
+
+    compressor.connect(audioCtx.destination);
+
+    const delay = audioCtx.createDelay();
+    delay.delayTime.value = 2.5;
+
+    const delayFilter = audioCtx.createBiquadFilter();
+    delayFilter.type = 'lowpass';
+    delayFilter.Q.value = 0;
+    delayFilter.frequency.value = 500;
+
+    const delayGain = audioCtx.createGain();
+    delayGain.gain.value = 0.5;
+
+    delay.connect(delayGain);
+    delayGain.connect(delayFilter);
+    delayFilter.connect(delay);
+    delayFilter.connect(compressor);
+
+    const reverbDelayA = audioCtx.createDelay();
+    reverbDelayA.delayTime.value = 0.82;
+
+    const reverbDelayB = audioCtx.createDelay();
+    reverbDelayB.delayTime.value = 0.73;
+
+    const reverbGain = audioCtx.createGain();
+    reverbGain.gain.value = 0.4;
+
+    const reverbFilter = audioCtx.createBiquadFilter();
+    reverbFilter.type = 'lowpass';
+    reverbFilter.Q.value = 0;
+    reverbFilter.frequency.value = 800;
+
+    const splitter = audioCtx.createChannelSplitter(2);
+    const merger = audioCtx.createChannelMerger(2);
+
+    reverbGain.connect(reverbDelayA);
+    reverbGain.connect(reverbDelayB);
+    reverbDelayA.connect(reverbFilter);
+    reverbDelayB.connect(reverbFilter);
+    reverbFilter.connect(splitter);
+    splitter.connect(merger, 1, 0);
+    splitter.connect(merger, 0, 1);
+    merger.connect(reverbGain);
+    reverbGain.connect(compressor);
+
+    delayFilter.connect(reverbFilter);
+
+    function addDrone () {
+      const length = 15 + srand() * 25;
+
+      const note = Math.floor(srand() * steps.length);
+      const octave = Math.floor(srand() * srand() * 4);
+
+      const freq = Math.pow(2, ((36 + steps[ note ] + 12 * octave) - 69) / 12) * 440;
+
+      console.log('Adding Drone: ' + length.toFixed(2) + ' / ' + freq.toFixed(2));
+
+      const oscillatorL = audioCtx.createOscillator();
+      oscillatorL.type = 'sawtooth';
+      oscillatorL.frequency.value = freq;
+      oscillatorL.detune.setValueAtTime(srand() * 40.0 - 20.0, audioCtx.currentTime);
+      oscillatorL.detune.linearRampToValueAtTime(srand() * 40.0 - 20.0, audioCtx.currentTime + length);
+
+      const panL = -srand();
+      const panR = srand();
+
+      if (audioCtx.createStereoPanner) {
+        var pannerL = audioCtx.createStereoPanner();
+        pannerL.pan.value = panL;
+        var pannerR = audioCtx.createStereoPanner();
+        pannerR.pan.value = panR;
+      } else {
+        var pannerL = audioCtx.createPanner();
+        pannerL.panningModel = 'equalpower';
+        pannerL.setPosition(panL, 0, 1 - Math.abs(panL));
+        var pannerR = audioCtx.createPanner();
+        pannerR.panningModel = 'equalpower';
+        pannerR.setPosition(panR, 0, 1 - Math.abs(panR));
+      }
+
+      const oscillatorR = audioCtx.createOscillator();
+      oscillatorR.type = 'sawtooth';
+      oscillatorR.frequency.value = freq;
+      oscillatorR.detune.setValueAtTime(srand() * 40.0 - 20.0, audioCtx.currentTime);
+      oscillatorR.detune.linearRampToValueAtTime(srand() * 40.0 - 20.0, audioCtx.currentTime + length);
+
+      const filter = audioCtx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.Q.value = srand() * 2.0;
+      filter.frequency.setValueAtTime(0.0, audioCtx.currentTime);
+      filter.frequency.linearRampToValueAtTime(freq * 1.5 + srand() * freq * 2.5, audioCtx.currentTime + length / 2.0);
+      filter.frequency.linearRampToValueAtTime(0.0, audioCtx.currentTime + length);
+
+      oscillatorL.connect(pannerL);
+      oscillatorR.connect(pannerR);
+      pannerL.connect(filter);
+      pannerR.connect(filter);
+      filter.connect(delay);
+      filter.connect(reverbFilter);
+      filter.connect(compressor);
+      oscillatorL.start();
+      oscillatorL.stop(audioCtx.currentTime + length);
+      oscillatorR.start();
+      oscillatorR.stop(audioCtx.currentTime + length);
+
+      setTimeout(addDrone, srand() * 10000 + 2500);
+    }
+    addDrone();
+  }
+});
+
 AFRAME.registerShader('ikeda', {
   schema: {
     color: { type: 'color', is: 'uniform', default: 'black' },
