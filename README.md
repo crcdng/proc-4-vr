@@ -1,6 +1,6 @@
 # proc^4
 
-**procprocprocproc** (proc^4) is a minimal, procedurally generated VR scene made with [A-Frame](https://aframe.io)
+**procprocprocproc** (proc^4) is a minimal, procedurally generated VR scene made with [A-Frame](https://aframe.io). Live at https://i3games.github.io/proc-4/.
 
 "You thought you had made it out. Suddenly you feel a force behind you, pulling you **back** deep into the maze. Can you escape before the monsters get at you?"
 
@@ -9,7 +9,7 @@ Why the name "procprocprocproc"?
 * the environment is a procedurally generated maze
 * the textures are procedurally generated shaders  
 * the sound is procedurally generated
-* the monsters' behaviour is procedurally determined
+* the pull mechanism and monsters' behaviour are procedures
 
 ... all from a common random seed.
 

@@ -26,19 +26,33 @@ class Cell {
     this.east = null;
   }
 
+  distances () {
+    const distances = new Map([[this, 0]]);
+    let frontier = [this];
+    while (frontier.length > 0) {
+      let newFrontier = [];
+      for (let cell of frontier) {
+        for (let linked of cell.linkedCells()) {
+          if (distances.has(linked)) { continue; }
+          distances.set(linked, distances.get(cell) + 1);
+          newFrontier.push(linked);
+        }
+      }
+      frontier = newFrontier;
+    }
+    return distances;
+  }
+
   link (cell, bidi = true) {
     this.links.set(cell, true);
     if (bidi) { cell.link(this, false); }
   }
 
-  unlink (cell, bidi = true) {
-    this.links.delete(cell);
-    if (bidi) { cell.unlink(this, false); }
-  }
-
-  links () { return this.links.keys(); }
-
   linked (cell) { return this.links.has(cell); }
+
+  linkedCells () { // do not call a JS method "links"
+    return this.links.keys();
+  }
 
   neighbours () {
     const list = [];
@@ -48,6 +62,11 @@ class Cell {
     if (this.west != null) { list.push(this.west); }
     return list;
   }
+
+  unlink (cell, bidi = true) {
+    this.links.delete(cell);
+    if (bidi) { cell.unlink(this, false); }
+  }
 }
 
 class Grid {
@@ -56,29 +75,6 @@ class Grid {
     this.columns = columns;
     this.grid = this.prepareGrid();
     this.configureCells();
-  }
-
-  prepareGrid () {
-    const grid = [];
-    for (let r = 0; r < this.rows; r++) {
-      let row = [];
-      for (let c = 0; c < this.columns; c++) {
-        row.push(new Cell(r, c));
-      }
-      grid.push(row);
-    }
-    return grid;
-  }
-
-  configureCells () {
-    for (let r = 0; r < this.rows; r++) {
-      for (let c = 0; c < this.columns; c++) {
-        if (this.inBounds(r - 1, c)) { this.grid[r][c].north = this.grid[r - 1][c]; }
-        if (this.inBounds(r + 1, c)) { this.grid[r][c].south = this.grid[r + 1][c]; }
-        if (this.inBounds(r, c - 1)) { this.grid[r][c].west = this.grid[r][c - 1]; }
-        if (this.inBounds(r, c + 1)) { this.grid[r][c].east = this.grid[r][c + 1]; }
-      }
-    }
   }
 
   binaryTree () {
@@ -94,8 +90,40 @@ class Grid {
     }
   }
 
+  configureCells () {
+    for (let r = 0; r < this.rows; r++) {
+      for (let c = 0; c < this.columns; c++) {
+        if (this.inBounds(r - 1, c)) { this.grid[r][c].north = this.grid[r - 1][c]; }
+        if (this.inBounds(r + 1, c)) { this.grid[r][c].south = this.grid[r + 1][c]; }
+        if (this.inBounds(r, c - 1)) { this.grid[r][c].west = this.grid[r][c - 1]; }
+        if (this.inBounds(r, c + 1)) { this.grid[r][c].east = this.grid[r][c + 1]; }
+      }
+    }
+  }
+
+  contentsOf (cell) {
+    let dist = this.distances;
+    if (dist != null && dist.has(cell)) {
+      return dist.get(cell).toString(36); // Integer 36
+    } else {
+      return ' ';
+    }
+  }
+
   inBounds (r, c) {
     return r >= 0 && r < this.rows && c >= 0 && c < this.columns;
+  }
+
+  prepareGrid () {
+    const grid = [];
+    for (let r = 0; r < this.rows; r++) {
+      let row = [];
+      for (let c = 0; c < this.columns; c++) {
+        row.push(new Cell(r, c));
+      }
+      grid.push(row);
+    }
+    return grid;
   }
 
   randomCell () {
@@ -113,8 +141,8 @@ class Grid {
       let bottom = '+';
       for (let cell of row) {
         const eastBoundary = cell.linked(cell.east) ? ' ' : '|';
-        top = top + '      ' + eastBoundary;
-        const southBoundary = cell.linked(cell.south) ? '     ' : '---';
+        top = top + ` ${this.contentsOf(cell)} ` + eastBoundary;
+        const southBoundary = cell.linked(cell.south) ? '   ' : '---';
         bottom = bottom + southBoundary + '+';
       }
       output = output + top + '\n';
@@ -143,8 +171,11 @@ AFRAME.registerComponent('maze', {
     const wallSize = 1;
     let maze = new Grid(this.data.rows, this.data.cols);
     maze.binaryTree();
+    let grid = maze.grid;
+
+    const startCell = grid[this.data.rows - 1][0]; // south-west corner
+    maze.distances = startCell.distances();
     console.log(`${maze}`);
-    const grid = maze.grid;
 
     for (let row of grid) {
       for (let cell of row) {
@@ -249,16 +280,17 @@ AFRAME.registerComponent('drone', {
       const panL = -srand();
       const panR = srand();
 
+      let pannerL, pannerR;
       if (audioCtx.createStereoPanner) {
-        var pannerL = audioCtx.createStereoPanner();
+        pannerL = audioCtx.createStereoPanner();
         pannerL.pan.value = panL;
-        var pannerR = audioCtx.createStereoPanner();
+        pannerR = audioCtx.createStereoPanner();
         pannerR.pan.value = panR;
       } else {
-        var pannerL = audioCtx.createPanner();
+        pannerL = audioCtx.createPanner();
         pannerL.panningModel = 'equalpower';
         pannerL.setPosition(panL, 0, 1 - Math.abs(panL));
-        var pannerR = audioCtx.createPanner();
+        pannerR = audioCtx.createPanner();
         pannerR.panningModel = 'equalpower';
         pannerR.setPosition(panR, 0, 1 - Math.abs(panR));
       }
