@@ -9,7 +9,7 @@ function mulberry (a = Date.now()) {
     return ((t ^ t >>> 14) >>> 0) / 4294967296;
   };
 }
-let srand = mulberry();
+const srand = mulberry();
 function randInt (max) { return Math.floor(srand() * max); } // [0..max)
 function sample (arr) {
   return arr[randInt(arr.length)];
@@ -30,9 +30,9 @@ class Cell {
     const distances = new Map([[this, 0]]);
     let frontier = [this];
     while (frontier.length > 0) {
-      let newFrontier = [];
-      for (let cell of frontier) {
-        for (let linked of cell.linkedCells()) {
+      const newFrontier = [];
+      for (const cell of frontier) {
+        for (const linked of cell.linkedCells()) {
           if (distances.has(linked)) { continue; }
           distances.set(linked, distances.get(cell) + 1);
           newFrontier.push(linked);
@@ -80,8 +80,8 @@ class Grid {
   binaryTree () {
     for (let r = 0; r < this.rows; r++) {
       for (let c = 0; c < this.columns; c++) {
-        let neighbors = [];
-        let cell = this.grid[r][c];
+        const neighbors = [];
+        const cell = this.grid[r][c];
         if (cell.north != null) { neighbors.push(cell.north); }
         if (cell.east != null) { neighbors.push(cell.east); }
         const neighbor = sample(neighbors);
@@ -102,7 +102,7 @@ class Grid {
   }
 
   contentsOf (cell) {
-    let dist = this.distances;
+    const dist = this.distances;
     if (dist != null && dist.has(cell)) {
       return dist.get(cell).toString(36); // Integer 36
     } else {
@@ -117,7 +117,7 @@ class Grid {
   prepareGrid () {
     const grid = [];
     for (let r = 0; r < this.rows; r++) {
-      let row = [];
+      const row = [];
       for (let c = 0; c < this.columns; c++) {
         row.push(new Cell(r, c));
       }
@@ -136,10 +136,10 @@ class Grid {
 
   toString () {
     let output = '+' + '---+'.repeat(this.columns) + '\n';
-    for (let row of this.grid) {
+    for (const row of this.grid) {
       let top = '|';
       let bottom = '+';
-      for (let cell of row) {
+      for (const cell of row) {
         const eastBoundary = cell.linked(cell.east) ? ' ' : '|';
         top = top + ` ${this.contentsOf(cell)} ` + eastBoundary;
         const southBoundary = cell.linked(cell.south) ? '   ' : '---';
@@ -161,7 +161,7 @@ AFRAME.registerComponent('maze', {
   init: function () {
     function addBlock (x, y, z) {
       const sceneEl = document.querySelector('a-scene');
-      let newWallEl = document.createElement('a-entity');
+      const newWallEl = document.createElement('a-entity');
       newWallEl.setAttribute('mixin', 'wall');
       newWallEl.object3D.position.set(x, y, z);
       sceneEl.appendChild(newWallEl);
@@ -169,16 +169,16 @@ AFRAME.registerComponent('maze', {
 
     const cellSize = 5;
     const wallSize = 1;
-    let maze = new Grid(this.data.rows, this.data.cols);
+    const maze = new Grid(this.data.rows, this.data.cols);
     maze.binaryTree();
-    let grid = maze.grid;
+    const grid = maze.grid;
 
     const startCell = grid[this.data.rows - 1][0]; // south-west corner
     maze.distances = startCell.distances();
     console.log(`${maze}`);
 
-    for (let row of grid) {
-      for (let cell of row) {
+    for (const row of grid) {
+      for (const cell of row) {
         const x1 = cell.column * cellSize;
         const x2 = (cell.column + 1) * cellSize;
         const z1 = cell.row * cellSize;
@@ -203,7 +203,7 @@ AFRAME.registerComponent('maze', {
 
 AFRAME.registerComponent('drone', {
   init: function () {
-    const steps = [ 0, 3, 5, 7, 10 ];
+    const steps = [0, 3, 5, 7, 10];
 
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
@@ -267,7 +267,7 @@ AFRAME.registerComponent('drone', {
       const note = Math.floor(srand() * steps.length);
       const octave = Math.floor(srand() * srand() * 4);
 
-      const freq = Math.pow(2, ((36 + steps[ note ] + 12 * octave) - 69) / 12) * 440;
+      const freq = Math.pow(2, ((36 + steps[note] + 12 * octave) - 69) / 12) * 440;
 
       console.log('Adding Drone: ' + length.toFixed(2) + ' / ' + freq.toFixed(2));
 
