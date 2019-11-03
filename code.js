@@ -9,8 +9,11 @@ function mulberry (a = Date.now()) {
     return ((t ^ t >>> 14) >>> 0) / 4294967296;
   };
 }
+
 const srand = mulberry();
+
 function randInt (max) { return Math.floor(srand() * max); } // [0..max)
+
 function sample (arr) {
   return arr[randInt(arr.length)];
 }
@@ -152,6 +155,8 @@ class Grid {
   }
 }
 
+let maze; // shared between components
+
 AFRAME.registerComponent('maze', {
   schema: {
     rows: { type: 'number' },
@@ -167,9 +172,10 @@ AFRAME.registerComponent('maze', {
       sceneEl.appendChild(newWallEl);
     }
 
+    maze = new Grid(this.data.rows, this.data.cols);
+
     const cellSize = 5;
     const wallSize = 1;
-    const maze = new Grid(this.data.rows, this.data.cols);
     maze.binaryTree();
     const grid = maze.grid;
 
@@ -323,6 +329,36 @@ AFRAME.registerComponent('drone', {
       setTimeout(addDrone, srand() * 10000 + 2500);
     }
     addDrone();
+  }
+});
+
+AFRAME.registerComponent('monster', {
+  dependencies: ['maze'],
+
+  init: function () {
+    this.throttled = AFRAME.utils.throttle(this.move, 1000, this);
+  },
+
+  move: function () {
+  },
+
+  tick: function (t, dt) {
+    this.throttled();
+  }
+});
+
+AFRAME.registerComponent('player', {
+  dependencies: ['maze'],
+
+  init: function () {
+    this.throttled = AFRAME.utils.throttle(this.move, 1000, this);
+  },
+
+  move: function () {
+  },
+
+  tick: function (t, dt) {
+    this.throttled();
   }
 });
 
