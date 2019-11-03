@@ -19,7 +19,7 @@ function sample (arr) {
 }
 
 class Cell {
-  constructor (row, column) {
+  constructor(row, column) {
     this.row = row;
     this.column = column;
     this.links = new Map();
@@ -29,14 +29,16 @@ class Cell {
     this.east = null;
   }
 
-  distances () {
+  distances() {
     const distances = new Map([[this, 0]]);
     let frontier = [this];
     while (frontier.length > 0) {
       const newFrontier = [];
       for (const cell of frontier) {
         for (const linked of cell.linkedCells()) {
-          if (distances.has(linked)) { continue; }
+          if (distances.has(linked)) {
+            continue;
+          }
           distances.set(linked, distances.get(cell) + 1);
           newFrontier.push(linked);
         }
@@ -46,78 +48,107 @@ class Cell {
     return distances;
   }
 
-  link (cell, bidi = true) {
+  link(cell, bidi = true) {
     this.links.set(cell, true);
-    if (bidi) { cell.link(this, false); }
+    if (bidi) {
+      cell.link(this, false);
+    }
   }
 
-  linked (cell) { return this.links.has(cell); }
+  linked(cell) {
+    return this.links.has(cell);
+  }
 
-  linkedCells () { // do not call a JS method "links"
+  linkedCells() {
+    // do not call a JS method "links"
     return this.links.keys();
   }
 
-  neighbours () {
+  neighbours() {
     const list = [];
-    if (this.north != null) { list.push(this.north); }
-    if (this.south != null) { list.push(this.south); }
-    if (this.east != null) { list.push(this.east); }
-    if (this.west != null) { list.push(this.west); }
+    if (this.north != null) {
+      list.push(this.north);
+    }
+    if (this.south != null) {
+      list.push(this.south);
+    }
+    if (this.east != null) {
+      list.push(this.east);
+    }
+    if (this.west != null) {
+      list.push(this.west);
+    }
     return list;
   }
 
-  unlink (cell, bidi = true) {
+  unlink(cell, bidi = true) {
     this.links.delete(cell);
-    if (bidi) { cell.unlink(this, false); }
+    if (bidi) {
+      cell.unlink(this, false);
+    }
   }
 }
 
 class Grid {
-  constructor (rows, columns) {
+  constructor(rows, columns) {
     this.rows = rows;
     this.columns = columns;
     this.grid = this.prepareGrid();
     this.configureCells();
   }
 
-  binaryTree () {
+  binaryTree() {
     for (let r = 0; r < this.rows; r++) {
       for (let c = 0; c < this.columns; c++) {
         const neighbors = [];
         const cell = this.grid[r][c];
-        if (cell.north != null) { neighbors.push(cell.north); }
-        if (cell.east != null) { neighbors.push(cell.east); }
+        if (cell.north != null) {
+          neighbors.push(cell.north);
+        }
+        if (cell.east != null) {
+          neighbors.push(cell.east);
+        }
         const neighbor = sample(neighbors);
-        if (neighbor != null) { this.grid[r][c].link(neighbor); }
+        if (neighbor != null) {
+          this.grid[r][c].link(neighbor);
+        }
       }
     }
   }
 
-  configureCells () {
+  configureCells() {
     for (let r = 0; r < this.rows; r++) {
       for (let c = 0; c < this.columns; c++) {
-        if (this.inBounds(r - 1, c)) { this.grid[r][c].north = this.grid[r - 1][c]; }
-        if (this.inBounds(r + 1, c)) { this.grid[r][c].south = this.grid[r + 1][c]; }
-        if (this.inBounds(r, c - 1)) { this.grid[r][c].west = this.grid[r][c - 1]; }
-        if (this.inBounds(r, c + 1)) { this.grid[r][c].east = this.grid[r][c + 1]; }
+        if (this.inBounds(r - 1, c)) {
+          this.grid[r][c].north = this.grid[r - 1][c];
+        }
+        if (this.inBounds(r + 1, c)) {
+          this.grid[r][c].south = this.grid[r + 1][c];
+        }
+        if (this.inBounds(r, c - 1)) {
+          this.grid[r][c].west = this.grid[r][c - 1];
+        }
+        if (this.inBounds(r, c + 1)) {
+          this.grid[r][c].east = this.grid[r][c + 1];
+        }
       }
     }
   }
 
-  contentsOf (cell) {
+  contentsOf(cell) {
     const dist = this.distances;
     if (dist != null && dist.has(cell)) {
       return dist.get(cell).toString(36); // Integer 36
     } else {
-      return ' ';
+      return " ";
     }
   }
 
-  inBounds (r, c) {
+  inBounds(r, c) {
     return r >= 0 && r < this.rows && c >= 0 && c < this.columns;
   }
 
-  prepareGrid () {
+  prepareGrid() {
     const grid = [];
     for (let r = 0; r < this.rows; r++) {
       const row = [];
@@ -129,27 +160,29 @@ class Grid {
     return grid;
   }
 
-  randomCell () {
+  randomCell() {
     const row = randInt(this.rows);
     const col = randInt(this.columns);
     return this.grid[row][col];
   }
 
-  size () { return this.rows * this.columns; }
+  size() {
+    return this.rows * this.columns;
+  }
 
-  toString () {
-    let output = '+' + '---+'.repeat(this.columns) + '\n';
+  toString() {
+    let output = "+" + "---+".repeat(this.columns) + "\n";
     for (const row of this.grid) {
-      let top = '|';
-      let bottom = '+';
+      let top = "|";
+      let bottom = "+";
       for (const cell of row) {
-        const eastBoundary = cell.linked(cell.east) ? ' ' : '|';
+        const eastBoundary = cell.linked(cell.east) ? " " : "|";
         top = top + ` ${this.contentsOf(cell)} ` + eastBoundary;
-        const southBoundary = cell.linked(cell.south) ? '   ' : '---';
-        bottom = bottom + southBoundary + '+';
+        const southBoundary = cell.linked(cell.south) ? "   " : "---";
+        bottom = bottom + southBoundary + "+";
       }
-      output = output + top + '\n';
-      output = output + bottom + '\n';
+      output = output + top + "\n";
+      output = output + bottom + "\n";
     }
     return output;
   }
@@ -157,29 +190,35 @@ class Grid {
 
 let maze; // shared between components
 
-AFRAME.registerComponent('maze', {
+AFRAME.registerComponent("maze", {
   schema: {
-    rows: { type: 'number' },
-    cols: { type: 'number' }
+    rows: { type: "number" },
+    cols: { type: "number" }
   },
 
-  init: function () {
-    function addBlock (x, y, z) {
-      const sceneEl = document.querySelector('a-scene');
-      const newWallEl = document.createElement('a-entity');
-      newWallEl.setAttribute('mixin', 'wall');
+  init: function() {
+    function addBlock(x, y, z) {
+      const sceneEl = document.querySelector("a-scene");
+      const newWallEl = document.createElement("a-entity");
+      newWallEl.setAttribute("mixin", "wall");
       newWallEl.object3D.position.set(x, y, z);
       sceneEl.appendChild(newWallEl);
     }
 
-    maze = new Grid(this.data.rows, this.data.cols);
+    const rows = this.data.rows;
+    const cols = this.data.cols;
+    maze = new Grid(rows, cols);
 
     const cellSize = 5;
     const wallSize = 1;
+
+    const offsetX = -0.5 * cellSize;
+    const offsetZ = -(rows - 0.5) * cellSize;
+
     maze.binaryTree();
     const grid = maze.grid;
 
-    const startCell = grid[this.data.rows - 1][0]; // south-west corner
+    const startCell = grid[rows - 1][0]; // south-west corner
     maze.distances = startCell.distances();
     console.log(`${maze}`);
 
@@ -190,25 +229,35 @@ AFRAME.registerComponent('maze', {
         const z1 = cell.row * cellSize;
         const z2 = (cell.row + 1) * cellSize;
         if (cell.north == null) {
-          for (let x = x1; x < x2; x = x + wallSize) { addBlock(x, 1, z1); }
+          for (let x = x1; x < x2; x = x + wallSize) {
+            addBlock(x + offsetX, 1, z1 + offsetZ);
+          }
         }
         if (cell.west == null) {
-          for (let z = z1; z < z2; z = z + wallSize) { addBlock(x1, 1, z); }
+          for (let z = z1; z < z2; z = z + wallSize) {
+            addBlock(x1 + offsetX, 1, z + offsetZ);
+          }
         }
         if (!cell.linked(cell.south)) {
-          for (let x = x1; x <= x2; x = x + wallSize) { addBlock(x, 1, z2); }
+          for (let x = x1; x <= x2; x = x + wallSize) {
+            addBlock(x + offsetX, 1, z2 + offsetZ);
+          }
         }
-        if (cell.column === maze.columns - 1 && cell.row === 0) { continue; } // wall opening
+        if (cell.column === maze.columns - 1 && cell.row === 0) {
+          continue;
+        } // wall opening
         if (!cell.linked(cell.east)) {
-          for (let z = z1; z <= z2; z = z + wallSize) { addBlock(x2, 1, z); }
+          for (let z = z1; z <= z2; z = z + wallSize) {
+            addBlock(x2 + offsetX, 1, z + offsetZ);
+          }
         }
       }
     }
   }
 });
 
-AFRAME.registerComponent('drone', {
-  init: function () {
+AFRAME.registerComponent("drone", {
+  init: function() {
     const steps = [0, 3, 5, 7, 10];
 
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -226,7 +275,7 @@ AFRAME.registerComponent('drone', {
     delay.delayTime.value = 2.5;
 
     const delayFilter = audioCtx.createBiquadFilter();
-    delayFilter.type = 'lowpass';
+    delayFilter.type = "lowpass";
     delayFilter.Q.value = 0;
     delayFilter.frequency.value = 500;
 
@@ -248,7 +297,7 @@ AFRAME.registerComponent('drone', {
     reverbGain.gain.value = 0.4;
 
     const reverbFilter = audioCtx.createBiquadFilter();
-    reverbFilter.type = 'lowpass';
+    reverbFilter.type = "lowpass";
     reverbFilter.Q.value = 0;
     reverbFilter.frequency.value = 800;
 
@@ -267,21 +316,30 @@ AFRAME.registerComponent('drone', {
 
     delayFilter.connect(reverbFilter);
 
-    function addDrone () {
+    function addDrone() {
       const length = 15 + srand() * 25;
 
       const note = Math.floor(srand() * steps.length);
       const octave = Math.floor(srand() * srand() * 4);
 
-      const freq = Math.pow(2, ((36 + steps[note] + 12 * octave) - 69) / 12) * 440;
+      const freq =
+        Math.pow(2, (36 + steps[note] + 12 * octave - 69) / 12) * 440;
 
-      console.log('Adding Drone: ' + length.toFixed(2) + ' / ' + freq.toFixed(2));
+      console.log(
+        "Adding Drone: " + length.toFixed(2) + " / " + freq.toFixed(2)
+      );
 
       const oscillatorL = audioCtx.createOscillator();
-      oscillatorL.type = 'sawtooth';
+      oscillatorL.type = "sawtooth";
       oscillatorL.frequency.value = freq;
-      oscillatorL.detune.setValueAtTime(srand() * 40.0 - 20.0, audioCtx.currentTime);
-      oscillatorL.detune.linearRampToValueAtTime(srand() * 40.0 - 20.0, audioCtx.currentTime + length);
+      oscillatorL.detune.setValueAtTime(
+        srand() * 40.0 - 20.0,
+        audioCtx.currentTime
+      );
+      oscillatorL.detune.linearRampToValueAtTime(
+        srand() * 40.0 - 20.0,
+        audioCtx.currentTime + length
+      );
 
       const panL = -srand();
       const panR = srand();
@@ -294,25 +352,37 @@ AFRAME.registerComponent('drone', {
         pannerR.pan.value = panR;
       } else {
         pannerL = audioCtx.createPanner();
-        pannerL.panningModel = 'equalpower';
+        pannerL.panningModel = "equalpower";
         pannerL.setPosition(panL, 0, 1 - Math.abs(panL));
         pannerR = audioCtx.createPanner();
-        pannerR.panningModel = 'equalpower';
+        pannerR.panningModel = "equalpower";
         pannerR.setPosition(panR, 0, 1 - Math.abs(panR));
       }
 
       const oscillatorR = audioCtx.createOscillator();
-      oscillatorR.type = 'sawtooth';
+      oscillatorR.type = "sawtooth";
       oscillatorR.frequency.value = freq;
-      oscillatorR.detune.setValueAtTime(srand() * 40.0 - 20.0, audioCtx.currentTime);
-      oscillatorR.detune.linearRampToValueAtTime(srand() * 40.0 - 20.0, audioCtx.currentTime + length);
+      oscillatorR.detune.setValueAtTime(
+        srand() * 40.0 - 20.0,
+        audioCtx.currentTime
+      );
+      oscillatorR.detune.linearRampToValueAtTime(
+        srand() * 40.0 - 20.0,
+        audioCtx.currentTime + length
+      );
 
       const filter = audioCtx.createBiquadFilter();
-      filter.type = 'lowpass';
+      filter.type = "lowpass";
       filter.Q.value = srand() * 2.0;
       filter.frequency.setValueAtTime(0.0, audioCtx.currentTime);
-      filter.frequency.linearRampToValueAtTime(freq * 1.5 + srand() * freq * 2.5, audioCtx.currentTime + length / 2.0);
-      filter.frequency.linearRampToValueAtTime(0.0, audioCtx.currentTime + length);
+      filter.frequency.linearRampToValueAtTime(
+        freq * 1.5 + srand() * freq * 2.5,
+        audioCtx.currentTime + length / 2.0
+      );
+      filter.frequency.linearRampToValueAtTime(
+        0.0,
+        audioCtx.currentTime + length
+      );
 
       oscillatorL.connect(pannerL);
       oscillatorR.connect(pannerR);
@@ -332,46 +402,43 @@ AFRAME.registerComponent('drone', {
   }
 });
 
-AFRAME.registerComponent('monster', {
-  dependencies: ['maze'],
+AFRAME.registerComponent("monster", {
+  dependencies: ["maze"],
 
-  init: function () {
+  init: function() {
     this.throttled = AFRAME.utils.throttle(this.move, 1000, this);
   },
 
-  move: function () {
-  },
+  move: function() {},
 
-  tick: function (t, dt) {
+  tick: function(t, dt) {
     this.throttled();
   }
 });
 
-AFRAME.registerComponent('player', {
-  dependencies: ['maze'],
+AFRAME.registerComponent("player", {
+  dependencies: ["maze"],
 
-  init: function () {
+  init: function() {
     this.throttled = AFRAME.utils.throttle(this.move, 1000, this);
   },
 
-  move: function () {
-  },
+  move: function() {},
 
-  tick: function (t, dt) {
+  tick: function(t, dt) {
     this.throttled();
   }
 });
 
-AFRAME.registerShader('ikeda', {
+AFRAME.registerShader("ikeda", {
   schema: {
-    color: { type: 'color', is: 'uniform', default: 'black' },
-    opacity: { type: 'number', is: 'uniform', default: 1.0 },
-    rnd: { type: 'number', is: 'uniform', default: srand() },
-    t: { type: 'time', is: 'uniform' }
+    color: { type: "color", is: "uniform", default: "black" },
+    opacity: { type: "number", is: "uniform", default: 1.0 },
+    rnd: { type: "number", is: "uniform", default: srand() },
+    t: { type: "time", is: "uniform" }
   },
   raw: false,
-  fragmentShader:
-  `
+  fragmentShader: `
     precision mediump float;
     varying vec2 vUv;
 
@@ -391,8 +458,7 @@ AFRAME.registerShader('ikeda', {
 
     }
   `,
-  vertexShader:
-  `
+  vertexShader: `
   varying vec2 vUv;
 
   void main() {

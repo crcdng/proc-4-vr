@@ -1,27 +1,34 @@
 <!DOCTYPE html>
 <html>
-<head>
-  <meta charset="utf-8">
-  <title>procprocprocproc</title>
-  <script src="https://aframe.io/releases/0.9.2/aframe.min.js"></script>
-  <script src="code.js"></script> 
-</head>
-<body>
-  <a-scene>
-    <a-assets>
-      <a-mixin id="wall"
-      geometry="primitive: box; height: 2; width: 1; depth: 1"
-      material="shader: ikeda; color: black; opacity: 0.7"
-      ></a-mixin>
-    </a-assets>
-    <a-sky color="#ECECEC"></a-sky>
-    <a-plane position="20 0 20" rotation="-90 0 0" width="60" height="60" color="#4FC65D"></a-plane>
-    <a-entity id="rig" position="25 0 25" rotation="0 0 0" drone>
-      <a-camera id="camera">
-        <a-cursor></a-cursor>
-      </a-camera>
-    </a-entity>
-    <a-entity maze="rows: 8; cols: 8"></a-entity>
-  </a-scene>
-</body>
+  <head>
+    <meta charset="utf-8" />
+    <title>procprocprocproc</title>
+    <script src="https://aframe.io/releases/0.9.2/aframe.min.js"></script>
+    <script src="code.js"></script>
+  </head>
+  <body>
+    <a-scene>
+      <a-assets>
+        <a-mixin
+          id="wall"
+          geometry="primitive: box; height: 2; width: 1; depth: 1"
+          material="shader: ikeda; color: black; opacity: 0.7"
+        ></a-mixin>
+      </a-assets>
+      <a-sky color="#ECECEC"></a-sky>
+      <a-plane
+        position="18 0 -18"
+        rotation="-90 0 0"
+        width="40"
+        height="40"
+        color="#4FC65D"
+      ></a-plane>
+      <a-entity id="player" position="0 0 0" rotation="0 0 0" drone>
+        <a-camera id="camera">
+          <a-cursor></a-cursor>
+        </a-camera>
+      </a-entity>
+      <a-entity maze="rows: 8; cols: 8"></a-entity>
+    </a-scene>
+  </body>
 </html>
