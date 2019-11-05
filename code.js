@@ -1,21 +1,30 @@
 /* global AFRAME */
 
-function mulberry (a = Date.now()) {
-  return function () {
-    a += 0x6D2B79F5;
+function mulberry(a = Date.now()) {
+  return function() {
+    a += 0x6d2b79f5;
     let t = a;
-    t = Math.imul(t ^ t >>> 15, t | 1);
-    t ^= t + Math.imul(t ^ t >>> 7, t | 61);
-    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
 }
 
 const srand = mulberry();
 
-function randInt (max) { return Math.floor(srand() * max); } // [0..max)
+function randInt(max) {
+  return Math.floor(srand() * max);
+} // [0..max)
 
-function sample (arr) {
+function sample(arr) {
   return arr[randInt(arr.length)];
+}
+
+const direction = { north: 0, east: 1, south: 2, west: 3 };
+const opposite = { 0: 2, 1: 3, 2: 0, 3: 1 };
+const directionValues = Object.values(direction);
+function directionKey(value) {
+  return Object.keys(direction).find(key => direction[key] === value);
 }
 
 class Cell {
@@ -65,6 +74,7 @@ class Cell {
   }
 
   neighbours() {
+    // British English
     const list = [];
     if (this.north != null) {
       list.push(this.north);
@@ -190,72 +200,6 @@ class Grid {
 
 let maze; // shared between components
 
-AFRAME.registerComponent("maze", {
-  schema: {
-    rows: { type: "number" },
-    cols: { type: "number" }
-  },
-
-  init: function() {
-    function addBlock(x, y, z) {
-      const sceneEl = document.querySelector("a-scene");
-      const newWallEl = document.createElement("a-entity");
-      newWallEl.setAttribute("mixin", "wall");
-      newWallEl.object3D.position.set(x, y, z);
-      sceneEl.appendChild(newWallEl);
-    }
-
-    const rows = this.data.rows;
-    const cols = this.data.cols;
-    maze = new Grid(rows, cols);
-
-    const cellSize = 5;
-    const wallSize = 1;
-
-    const offsetX = -0.5 * cellSize;
-    const offsetZ = -(rows - 0.5) * cellSize;
-
-    maze.binaryTree();
-    const grid = maze.grid;
-
-    const startCell = grid[rows - 1][0]; // south-west corner
-    maze.distances = startCell.distances();
-    console.log(`${maze}`);
-
-    for (const row of grid) {
-      for (const cell of row) {
-        const x1 = cell.column * cellSize;
-        const x2 = (cell.column + 1) * cellSize;
-        const z1 = cell.row * cellSize;
-        const z2 = (cell.row + 1) * cellSize;
-        if (cell.north == null) {
-          for (let x = x1; x < x2; x = x + wallSize) {
-            addBlock(x + offsetX, 1, z1 + offsetZ);
-          }
-        }
-        if (cell.west == null) {
-          for (let z = z1; z < z2; z = z + wallSize) {
-            addBlock(x1 + offsetX, 1, z + offsetZ);
-          }
-        }
-        if (!cell.linked(cell.south)) {
-          for (let x = x1; x <= x2; x = x + wallSize) {
-            addBlock(x + offsetX, 1, z2 + offsetZ);
-          }
-        }
-        if (cell.column === maze.columns - 1 && cell.row === 0) {
-          continue;
-        } // wall opening
-        if (!cell.linked(cell.east)) {
-          for (let z = z1; z <= z2; z = z + wallSize) {
-            addBlock(x2 + offsetX, 1, z + offsetZ);
-          }
-        }
-      }
-    }
-  }
-});
-
 AFRAME.registerComponent("drone", {
   init: function() {
     const steps = [0, 3, 5, 7, 10];
@@ -325,9 +269,7 @@ AFRAME.registerComponent("drone", {
       const freq =
         Math.pow(2, (36 + steps[note] + 12 * octave - 69) / 12) * 440;
 
-      console.log(
-        "Adding Drone: " + length.toFixed(2) + " / " + freq.toFixed(2)
-      );
+      // console.log("Adding Drone: " + length.toFixed(2) + " / " + freq.toFixed(2));
 
       const oscillatorL = audioCtx.createOscillator();
       oscillatorL.type = "sawtooth";
@@ -402,34 +344,6 @@ AFRAME.registerComponent("drone", {
   }
 });
 
-AFRAME.registerComponent("monster", {
-  dependencies: ["maze"],
-
-  init: function() {
-    this.throttled = AFRAME.utils.throttle(this.move, 1000, this);
-  },
-
-  move: function() {},
-
-  tick: function(t, dt) {
-    this.throttled();
-  }
-});
-
-AFRAME.registerComponent("player", {
-  dependencies: ["maze"],
-
-  init: function() {
-    this.throttled = AFRAME.utils.throttle(this.move, 1000, this);
-  },
-
-  move: function() {},
-
-  tick: function(t, dt) {
-    this.throttled();
-  }
-});
-
 AFRAME.registerShader("ikeda", {
   schema: {
     color: { type: "color", is: "uniform", default: "black" },
@@ -466,4 +380,455 @@ AFRAME.registerShader("ikeda", {
     gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
   }
   `
+});
+
+AFRAME.registerComponent("maze", {
+  schema: {
+    rows: { type: "number" },
+    cols: { type: "number" }
+  },
+
+  init: function() {
+    function addBlock(x, y, z) {
+      const sceneEl = document.querySelector("a-scene");
+      const newWallEl = document.createElement("a-entity");
+      newWallEl.setAttribute("mixin", "wall");
+      newWallEl.setAttribute("class", "cursor-listener");
+      newWallEl.object3D.position.set(x, y, z);
+      sceneEl.appendChild(newWallEl);
+    }
+
+    const rows = this.data.rows;
+    const cols = this.data.cols;
+    maze = new Grid(rows, cols);
+
+    const cellSize = 5;
+    const wallSize = 1;
+
+    const offsetX = -0.5 * cellSize;
+    const offsetZ = -(rows - 0.5) * cellSize;
+
+    maze.binaryTree();
+    const grid = maze.grid;
+
+    const startCell = grid[rows - 1][0]; // south-west corner
+    maze.distances = startCell.distances();
+    console.log(`${maze}`);
+
+    for (const row of grid) {
+      for (const cell of row) {
+        const x1 = cell.column * cellSize;
+        const x2 = (cell.column + 1) * cellSize;
+        const z1 = cell.row * cellSize;
+        const z2 = (cell.row + 1) * cellSize;
+        if (cell.north == null) {
+          for (let x = x1; x < x2; x = x + wallSize) {
+            addBlock(x + offsetX, 1, z1 + offsetZ);
+          }
+        }
+        if (cell.west == null) {
+          for (let z = z1; z < z2; z = z + wallSize) {
+            addBlock(x1 + offsetX, 1, z + offsetZ);
+          }
+        }
+        if (!cell.linked(cell.south)) {
+          for (let x = x1; x <= x2; x = x + wallSize) {
+            addBlock(x + offsetX, 1, z2 + offsetZ);
+          }
+        }
+        if (cell.column === maze.columns - 1 && cell.row === 0) {
+          continue;
+        } // wall opening
+        if (!cell.linked(cell.east)) {
+          for (let z = z1; z <= z2; z = z + wallSize) {
+            addBlock(x2 + offsetX, 1, z + offsetZ);
+          }
+        }
+      }
+    }
+  }
+});
+
+AFRAME.registerComponent("monster", {
+  dependencies: ["maze"],
+
+  init: function() {
+    this.throttled = AFRAME.utils.throttle(this.move, 1000, this);
+  },
+
+  move: function() {},
+
+  tick: function(t, dt) {
+    this.throttled();
+  }
+});
+
+AFRAME.registerComponent("player", {
+  init: function() {
+    this.grid = maze.grid;
+
+    this.row = this.grid.length - 1;
+    this.column = 0;
+    this.direction = direction.north;
+
+    this.el.object3D.position.set(0, 0, 0);
+    this.el.object3D.rotation.set(0, 0, 0);
+    // this.throttled = AFRAME.utils.throttle(this.move, 1000, this);
+  },
+
+  moveDirection: function(forward = true) {
+    const row = this.row;
+    const column = this.column;
+    const loc = this.grid[row][column];
+    let possibleDirection;
+    for (let { row: linkedRow, column: linkedColumn } of loc.linkedCells()) {
+      if (row > linkedRow) {
+        possibleDirection = direction.north;
+      } else if (row < linkedRow) {
+        possibleDirection = direction.south;
+      } else if (column > linkedColumn) {
+        possibleDirection = direction.west;
+      } else if (column < linkedColumn) {
+        possibleDirection = direction.east;
+      }
+      console.log(row, column, linkedRow, linkedColumn, this.direction, possibleDirection);
+      if (forward === true && this.direction === possibleDirection) {
+        return this.direction;
+      }
+      else if (forward === false && Math.abs(this.direction - possibleDirection) === 2) {
+        return opposite[this.direction];
+      }
+    }
+    return null;
+  },
+
+  move: function(dir) {
+    console.log(`moving ${dir}`);
+    if (dir === direction.north) {
+      this.row = this.row - 1;
+      this.el.object3D.position.z += (dir - 1) * 5;
+    } else if (dir === direction.south) {
+      this.row = this.row + 1;
+      this.el.object3D.position.z += (dir - 1) * 5;
+    } else if (dir === direction.east) {
+      this.column = this.column + 1;
+      this.el.object3D.position.x += (-dir + 2) * 5;
+    } else if (dir === direction.west) {
+      this.column = this.column - 1;
+      this.el.object3D.position.x += (-dir + 2) * 5;
+    }
+  },
+
+  rotate: function() {},
+
+  left: function() {
+    this.direction =
+      this.direction === 0 ? directionValues.length - 1 : this.direction - 1;
+    console.log(`new direction ${this.direction}`);
+    this.el.object3D.rotateY(Math.PI / 2);
+  },
+
+  right: function() {
+    this.direction = (this.direction + 1) % directionValues.length;
+    console.log(`new direction ${this.direction}`);
+    this.el.object3D.rotateY(-Math.PI / 2);
+  },
+
+  forwards: function() {
+    const moveDirection = this.moveDirection(true);
+    if (moveDirection != null) { this.move(moveDirection); }
+  },
+
+  back: function() {
+    const moveDirection = this.moveDirection(false);
+    if (moveDirection != null) { this.move(moveDirection); }
+  },
+
+  tick: function(t, dt) {
+    // this.throttled();
+  }
+});
+
+// THE FOLLOWING CODE IS COPIED FROM THE AFRAME WASD-COMPONENT
+// https://github.com/aframevr/aframe/blob/master/src/components/wasd-controls.js
+// TODO Clean up
+
+function bind(fn, ctx /* , arg1, arg2 */) {
+  return (function(prependedArgs) {
+    return function bound() {
+      // Concat the bound function arguments with those passed to original bind
+      var args = prependedArgs.concat(Array.prototype.slice.call(arguments, 0));
+      return fn.apply(ctx, args);
+    };
+  })(Array.prototype.slice.call(arguments, 2));
+}
+
+function isEmptyObject(keys) {
+  var key;
+  for (key in keys) {
+    return false;
+  }
+  return true;
+}
+
+AFRAME.registerComponent("wasd-maze", {
+  dependencies: ["player"],
+
+  schema: {
+    acceleration: { default: 65 },
+    adAxis: { default: "x", oneOf: ["x", "y", "z"] },
+    wsAxis: { default: "z", oneOf: ["x", "y", "z"] }
+  },
+
+  init: function() {
+    // To keep track of the pressed keys.
+    this.keys = {};
+    this.easing = 1.1;
+
+    this.velocity = new THREE.Vector3();
+
+    // Bind methods and add event listeners.
+    this.onBlur = bind(this.onBlur, this);
+    this.onFocus = bind(this.onFocus, this);
+    this.onKeyDown = bind(this.onKeyDown, this);
+    this.onKeyUp = bind(this.onKeyUp, this);
+    this.onVisibilityChange = bind(this.onVisibilityChange, this);
+    this.attachVisibilityEventListeners();
+  },
+
+  tick: function(time, delta) {
+    var data = this.data;
+    var el = this.el;
+    var velocity = this.velocity;
+
+    if (
+      !velocity[data.adAxis] &&
+      !velocity[data.wsAxis] &&
+      isEmptyObject(this.keys)
+    ) {
+      return;
+    }
+
+    // Update velocity.
+    delta = delta / 1000;
+    // this.updateVelocity(delta);
+
+    if (!velocity[data.adAxis] && !velocity[data.wsAxis]) {
+      return;
+    }
+
+    // Get movement vector and translate position.
+    // el.object3D.position.add(this.getMovementVector(delta));
+  },
+
+  remove: function() {
+    this.removeKeyEventListeners();
+    this.removeVisibilityEventListeners();
+  },
+
+  play: function() {
+    this.attachKeyEventListeners();
+  },
+
+  pause: function() {
+    this.keys = {};
+    this.removeKeyEventListeners();
+  },
+
+  updateVelocity: function(delta) {
+    const CLAMP_VELOCITY = 0.00001;
+    const MAX_DELTA = 0.2;
+
+    var acceleration;
+    var adAxis;
+    var data = this.data;
+    var keys = this.keys;
+    var velocity = this.velocity;
+    var wsAxis;
+
+    adAxis = data.adAxis;
+    wsAxis = data.wsAxis;
+
+    // If FPS too low, reset velocity.
+    if (delta > MAX_DELTA) {
+      velocity[adAxis] = 0;
+      velocity[wsAxis] = 0;
+      return;
+    }
+
+    // https://gamedev.stackexchange.com/questions/151383/frame-rate-independant-movement-with-acceleration
+    var scaledEasing = Math.pow(1 / this.easing, delta * 60);
+    // Velocity Easing.
+    if (velocity[adAxis] !== 0) {
+      velocity[adAxis] -= velocity[adAxis] * scaledEasing;
+    }
+    if (velocity[wsAxis] !== 0) {
+      velocity[wsAxis] -= velocity[wsAxis] * scaledEasing;
+    }
+
+    // Clamp velocity easing.
+    if (Math.abs(velocity[adAxis]) < CLAMP_VELOCITY) {
+      velocity[adAxis] = 0;
+    }
+    if (Math.abs(velocity[wsAxis]) < CLAMP_VELOCITY) {
+      velocity[wsAxis] = 0;
+    }
+
+    // Update velocity using keys pressed.
+    acceleration = data.acceleration;
+
+    if (keys.KeyW || keys.ArrowUp) {
+      velocity[wsAxis] -= acceleration * delta;
+    }
+    if (keys.KeyS || keys.ArrowDown) {
+      velocity[wsAxis] += acceleration * delta;
+    }
+  },
+
+  getMovementVector: (function() {
+    var directionVector = new THREE.Vector3(0, 0, 0);
+    var rotationEuler = new THREE.Euler(0, 0, 0, "YXZ");
+
+    return function(delta) {
+      var rotation = this.el.getAttribute("rotation");
+      var velocity = this.velocity;
+      var xRotation;
+
+      directionVector.copy(velocity);
+      directionVector.multiplyScalar(delta);
+
+      // Absolute.
+      if (!rotation) {
+        return directionVector;
+      }
+
+      // Transform direction relative to heading.
+      rotationEuler.set(
+        THREE.Math.degToRad(xRotation),
+        THREE.Math.degToRad(rotation.y),
+        0
+      );
+      directionVector.applyEuler(rotationEuler);
+      return directionVector;
+    };
+  })(),
+
+  attachVisibilityEventListeners: function() {
+    window.addEventListener("blur", this.onBlur);
+    window.addEventListener("focus", this.onFocus);
+    document.addEventListener("visibilitychange", this.onVisibilityChange);
+  },
+
+  removeVisibilityEventListeners: function() {
+    window.removeEventListener("blur", this.onBlur);
+    window.removeEventListener("focus", this.onFocus);
+    document.removeEventListener("visibilitychange", this.onVisibilityChange);
+  },
+
+  attachKeyEventListeners: function() {
+    window.addEventListener("keydown", this.onKeyDown);
+    window.addEventListener("keyup", this.onKeyUp);
+  },
+
+  removeKeyEventListeners: function() {
+    window.removeEventListener("keydown", this.onKeyDown);
+    window.removeEventListener("keyup", this.onKeyUp);
+  },
+
+  onBlur: function() {
+    this.pause();
+  },
+
+  onFocus: function() {
+    this.play();
+  },
+
+  onVisibilityChange: function() {
+    if (document.hidden) {
+      this.onBlur();
+    } else {
+      this.onFocus();
+    }
+  },
+
+  onKeyDown: function(event) {
+    const keycodeToCode = {
+      "38": "ArrowUp",
+      "37": "ArrowLeft",
+      "40": "ArrowDown",
+      "39": "ArrowRight",
+      "87": "KeyW",
+      "65": "KeyA",
+      "83": "KeyS",
+      "68": "KeyD"
+    };
+    const keys = [
+      "KeyW",
+      "KeyA",
+      "KeyS",
+      "KeyD",
+      "ArrowUp",
+      "ArrowLeft",
+      "ArrowRight",
+      "ArrowDown"
+    ];
+    function shouldCaptureKeyEvent(event) {
+      if (event.metaKey) {
+        return false;
+      }
+      return document.activeElement === document.body;
+    }
+    var code;
+    if (!shouldCaptureKeyEvent(event)) {
+      return;
+    }
+    code = event.code || keycodeToCode[event.keyCode];
+    // if (KEYS.indexOf(code) !== -1) {
+    //   this.keys[code] = true;
+    // }
+  },
+
+  onKeyUp: function(event) {
+    const keycodeToCode = {
+      "38": "ArrowUp",
+      "37": "ArrowLeft",
+      "40": "ArrowDown",
+      "39": "ArrowRight",
+      "87": "KeyW",
+      "65": "KeyA",
+      "83": "KeyS",
+      "68": "KeyD"
+    };
+    const keys = [
+      "KeyW",
+      "KeyA",
+      "KeyS",
+      "KeyD",
+      "ArrowUp",
+      "ArrowLeft",
+      "ArrowRight",
+      "ArrowDown"
+    ];
+    function shouldCaptureKeyEvent(event) {
+      if (event.metaKey) {
+        return false;
+      }
+      return document.activeElement === document.body;
+    }
+    var code;
+    if (!shouldCaptureKeyEvent(event)) {
+      return;
+    }
+    code = event.code || keycodeToCode[event.keyCode];
+    if (code == "KeyD" || code == "ArrowRight") {
+      this.el.components.player.right();
+    } else if (code == "KeyA" || code == "ArrowLeft") {
+      this.el.components.player.left();
+    }
+    if (code == "KeyW" || code == "ArrowUp") {
+      this.el.components.player.forwards();
+    } else if (code == "KeyS" || code == "ArrowDown") {
+      this.el.components.player.back();
+    }
+  }
 });

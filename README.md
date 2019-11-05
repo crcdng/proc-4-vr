@@ -4,23 +4,25 @@
 
 Why the name "procprocprocproc" ("proc"^4)?
 
-* the environment is a procedurally generated maze
-* the textures are procedurally generated shaders  
-* the sound is procedurally generated
-* the monsters and their behaviour is procedurally generated
+- the environment is a procedurally generated maze
+- the textures are procedurally generated shaders
+- the sound is procedurally generated
+- the monsters and their behaviour is procedurally generated
 
 ... all from a common random seed.
 
-****
+---
+
 Nobody: ...
 
-me: *Should I call it "Poor Man's Sky" instead?*
-****
+me: _Should I call it "Poor Man's Sky" instead?_
+
+---
 
 Milestones
 
-* Version 1 in November 2019 for Procjam https://itch.io/jam/procjam
-* Started in August/September 2019, originally planned for JS13k https://js13kgames.com/webxr
+- Version 1 in November 2019 for Procjam https://itch.io/jam/procjam
+- Started in August/September 2019, originally planned for JS13k https://js13kgames.com/webxr
 
 Inspired by:
 

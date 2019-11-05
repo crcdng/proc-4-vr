@@ -2,31 +2,39 @@
 
 #### Doing
 
+- generate monsters iteration 1
+- monster movement
+
 #### To Do
 
-- add drop physics
-- place player
-- player movement in browser (override controls)
-- player movement in cardboard
-- generate monsters iteration 1
-- generate shader iteration 2
-- generate sound iteration 2
-- generate maze iteration 2
-- generate monsters iteration 2
+- shader iteration 2
+- sound iteration 2
+- monsters iteration 2
 - adapt random generator / seed
+- final position (end)
 - floor
 - sky
 - embed in HTML page w/ instructions
+- add epilepsy warning
 - start screen w/ audio trigger
-- reorganise code
+- check on chrome, safari, chrome android, safari ios
 
 #### Optional / Later
 
-- VR controller support
+- animate player movement
+- player movement in cardboard (fuse cursor)
+- player movement with VR / 6DOF controller support
+- polish, polish, polish
+- better maze algorithm
+- reorganise code
+- clean up WASD code
+- add drop physics
 - Multiplayer :)
 
 #### Done
 
+- player movement in desktop browser (override WASD controls)
+- place maze, ground and player
 - generate shader iteration 1
 - generate sound iteration 1
 - generate maze iteration 1
