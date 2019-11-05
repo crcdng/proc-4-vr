@@ -10,6 +10,7 @@
 - sound iteration 2
 - monsters iteration 2
 - adapt random generator / seed
+- monster / player interaction
 - final position (end)
 - floor
 - sky
