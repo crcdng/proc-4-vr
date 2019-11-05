@@ -12,9 +12,7 @@ function mulberry(a = Date.now()) {
 
 const srand = mulberry();
 
-function randInt(max) {
-  return Math.floor(srand() * max);
-} // [0..max)
+function randInt(max) { return Math.floor(srand() * max); } // [0..max)
 
 function sample(arr) {
   return arr[randInt(arr.length)];
@@ -344,48 +342,78 @@ AFRAME.registerComponent("drone", {
   }
 });
 
-AFRAME.registerShader("ikeda", {
-  schema: {
-    color: { type: "color", is: "uniform", default: "black" },
-    opacity: { type: "number", is: "uniform", default: 1.0 },
-    rnd: { type: "number", is: "uniform", default: srand() },
-    t: { type: "time", is: "uniform" }
-  },
-  raw: false,
-  fragmentShader: `
-    precision mediump float;
-    varying vec2 vUv;
+AFRAME.registerComponent("game", {
+  // dependencies: ["maze", "player", "monster", "wasd-maze"],
 
-    uniform vec3 color;
-    uniform float opacity;
-    uniform float rnd;
-    uniform float t;
+  init: function() {
+    const sceneEl = document.querySelector("a-scene");
+    const gameEl = this.el;
 
-    void main () {
-      float time = t / 1000.0;
-      gl_FragColor = mix(
-        vec4(mod(vUv , 0.05) * rnd * 20.0, 1.0, 1.0),
-        vec4(color, 1.0),
-        sin(time)
-      );
-      // gl_FragColor = vec4(color, opacity);
+    function addFloor(parentEl, w, h, color, x = 0, y = 0, z = 0, a = 0, p = 0, r = 0) {
+      const floorEl = document.createElement("a-plane");
+      floorEl.setAttribute("position", `${x} ${y} ${z}`);
+      floorEl.setAttribute("rotation", `${a} ${p} ${r}`);
+      floorEl.setAttribute("width", `${w}`);
+      floorEl.setAttribute("height", `${h}`);
+      floorEl.setAttribute("color", `${color}`);
+      parentEl.appendChild(floorEl);
+    }
+
+    function addMaze(parentEl, rows, columns, x = 0, y = 0, z = 0) {
+      const mazeEl = document.createElement("a-entity");
+      mazeEl.setAttribute("maze", { rows: rows, columns: columns });
+      mazeEl.object3D.position.set(x, y, z);
+      parentEl.appendChild(mazeEl);
+    }
+
+    function addMonster(x, y, z) {
 
     }
-  `,
-  vertexShader: `
-  varying vec2 vUv;
 
-  void main() {
-    vUv = uv;
-    gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+    function addPlayer(parentEl, x = 0, y = 0, z = 0, a = 0, p = 0, r = 0) {
+      const playerEl = document.createElement("a-entity");
+
+      playerEl.setAttribute("id", "player");
+      playerEl.setAttribute("player", ""); // must set attribute values
+      playerEl.setAttribute("wasd-maze", "");
+      playerEl.setAttribute("drone"); // sound follows player
+      playerEl.setAttribute("position", `${x} ${y} ${z}`);
+      playerEl.setAttribute("rotation", `${a} ${p} ${r}`);
+
+      const cameraEl = document.createElement("a-camera");
+      cameraEl.setAttribute("id", "camera");
+      cameraEl.setAttribute("wasd-controls-enabled", "false");
+
+      const cursorEl = document.createElement("a-cursor");
+
+      parentEl.appendChild(playerEl);
+      playerEl.appendChild(cameraEl);
+      cameraEl.appendChild(cursorEl);
+    }
+
+    function addSky(parentEl, color) {
+      const skyEl = document.createElement("a-sky");
+      skyEl.setAttribute("color", `${color}`);
+      parentEl.appendChild(skyEl);
+    }
+
+    sceneEl.appendChild(gameEl); // has to be attached first(!)
+
+    addMaze(gameEl, 8, 8);
+    addFloor(gameEl, 40, 40, "#4FC65D", 18, 0, -18, -90, 0, 0);
+    addSky(gameEl, "#ECECA0");
+    addPlayer(gameEl, 0, 0, 0);
+    // for (let m = 0; m < 1; m++) {
+    //   addMonster(0, 0, 0, gameEl);
+    // }
+
   }
-  `
 });
 
 AFRAME.registerComponent("maze", {
   schema: {
     rows: { type: "number" },
-    cols: { type: "number" }
+    columns: { type: "number" }
   },
 
   init: function() {
@@ -399,8 +427,7 @@ AFRAME.registerComponent("maze", {
     }
 
     const rows = this.data.rows;
-    const cols = this.data.cols;
-    maze = new Grid(rows, cols);
+    const columns = this.data.columns;
 
     const cellSize = 5;
     const wallSize = 1;
@@ -408,9 +435,9 @@ AFRAME.registerComponent("maze", {
     const offsetX = -0.5 * cellSize;
     const offsetZ = -(rows - 0.5) * cellSize;
 
+    maze = new Grid(rows, columns);
     maze.binaryTree();
     const grid = maze.grid;
-
     const startCell = grid[rows - 1][0]; // south-west corner
     maze.distances = startCell.distances();
     console.log(`${maze}`);
@@ -450,8 +477,6 @@ AFRAME.registerComponent("maze", {
 });
 
 AFRAME.registerComponent("monster", {
-  dependencies: ["maze"],
-
   init: function() {
     this.throttled = AFRAME.utils.throttle(this.move, 1000, this);
   },
@@ -491,11 +516,20 @@ AFRAME.registerComponent("player", {
       } else if (column < linkedColumn) {
         possibleDirection = direction.east;
       }
-      console.log(row, column, linkedRow, linkedColumn, this.direction, possibleDirection);
+      console.log(
+        row,
+        column,
+        linkedRow,
+        linkedColumn,
+        this.direction,
+        possibleDirection
+      );
       if (forward === true && this.direction === possibleDirection) {
         return this.direction;
-      }
-      else if (forward === false && Math.abs(this.direction - possibleDirection) === 2) {
+      } else if (
+        forward === false &&
+        Math.abs(this.direction - possibleDirection) === 2
+      ) {
         return opposite[this.direction];
       }
     }
@@ -536,12 +570,16 @@ AFRAME.registerComponent("player", {
 
   forwards: function() {
     const moveDirection = this.moveDirection(true);
-    if (moveDirection != null) { this.move(moveDirection); }
+    if (moveDirection != null) {
+      this.move(moveDirection);
+    }
   },
 
   back: function() {
     const moveDirection = this.moveDirection(false);
-    if (moveDirection != null) { this.move(moveDirection); }
+    if (moveDirection != null) {
+      this.move(moveDirection);
+    }
   },
 
   tick: function(t, dt) {
@@ -572,8 +610,6 @@ function isEmptyObject(keys) {
 }
 
 AFRAME.registerComponent("wasd-maze", {
-  dependencies: ["player"],
-
   schema: {
     acceleration: { default: 65 },
     adAxis: { default: "x", oneOf: ["x", "y", "z"] },
@@ -831,4 +867,42 @@ AFRAME.registerComponent("wasd-maze", {
       this.el.components.player.back();
     }
   }
+});
+
+AFRAME.registerShader("wall", {
+  schema: {
+    color: { type: "color", is: "uniform", default: "black" },
+    opacity: { type: "number", is: "uniform", default: 1.0 },
+    rnd: { type: "number", is: "uniform", default: srand() },
+    t: { type: "time", is: "uniform" }
+  },
+  raw: false,
+  fragmentShader: `
+    precision mediump float;
+    varying vec2 vUv;
+
+    uniform vec3 color;
+    uniform float opacity;
+    uniform float rnd;
+    uniform float t;
+
+    void main () {
+      float time = t / 1000.0;
+      gl_FragColor = mix(
+        vec4(mod(vUv , 0.05) * rnd * 20.0, 1.0, 1.0),
+        vec4(color, 1.0),
+        sin(time)
+      );
+      // gl_FragColor = vec4(color, opacity);
+
+    }
+  `,
+  vertexShader: `
+  varying vec2 vUv;
+
+  void main() {
+    vUv = uv;
+    gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+  }
+  `
 });

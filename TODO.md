@@ -33,6 +33,7 @@
 
 #### Done
 
+- generate scene elements in game component
 - player movement in desktop browser (override WASD controls)
 - place maze, ground and player
 - generate shader iteration 1

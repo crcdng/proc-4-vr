@@ -12,23 +12,10 @@
         <a-mixin
           id="wall"
           geometry="primitive: box; height: 2; width: 1; depth: 1"
-          material="shader: ikeda; color: black; opacity: 0.7"
+          material="shader: wall; color: black; opacity: 0.7"
         ></a-mixin>
       </a-assets>
-      <a-sky color="#ECECEC"></a-sky>
-      <a-plane
-        position="18 0 -18"
-        rotation="-90 0 0"
-        width="40"
-        height="40"
-        color="#4FC65D"
-      ></a-plane>
-      <a-entity id="player" player wasd-maze drone>
-        <a-camera wasd-controls-enabled="false" id="camera">
-          <a-cursor></a-cursor>
-        </a-camera>
-      </a-entity>
-      <a-entity maze="rows: 8; cols: 8"></a-entity>
+      <a-entity game></a-entity>
     </a-scene>
   </body>
 </html>
