@@ -2,7 +2,6 @@
 
 #### Doing
 
-- generate monsters iteration 1
 - monster movement
 
 #### To Do
@@ -33,6 +32,7 @@
 
 #### Done
 
+- generate monsters iteration 1
 - generate scene elements in game component
 - player movement in desktop browser (override WASD controls)
 - place maze, ground and player

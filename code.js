@@ -9,11 +9,10 @@ function mulberry(a = Date.now()) {
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
 }
-
 const srand = mulberry();
-
-function randInt(max) { return Math.floor(srand() * max); } // [0..max)
-
+function randInt(max, min = 0) {
+  return min + Math.floor(srand() * (max - min));
+} // [0..max)
 function sample(arr) {
   return arr[randInt(arr.length)];
 }
@@ -24,6 +23,11 @@ const directionValues = Object.values(direction);
 function directionKey(value) {
   return Object.keys(direction).find(key => direction[key] === value);
 }
+function cellToPosition(row, column, rows, columns, cellSize, height = 0) {
+  return { x: column * cellSize, y: height, z: (row - (rows - 1)) * cellSize };
+}
+const cellSize = 5;
+const wallSize = 1;
 
 class Cell {
   constructor(row, column) {
@@ -349,7 +353,18 @@ AFRAME.registerComponent("game", {
     const sceneEl = document.querySelector("a-scene");
     const gameEl = this.el;
 
-    function addFloor(parentEl, w, h, color, x = 0, y = 0, z = 0, a = 0, p = 0, r = 0) {
+    function addFloor(
+      parentEl,
+      w,
+      h,
+      color,
+      x = 0,
+      y = 0,
+      z = 0,
+      a = 0,
+      p = 0,
+      r = 0
+    ) {
       const floorEl = document.createElement("a-plane");
       floorEl.setAttribute("position", `${x} ${y} ${z}`);
       floorEl.setAttribute("rotation", `${a} ${p} ${r}`);
@@ -366,19 +381,30 @@ AFRAME.registerComponent("game", {
       parentEl.appendChild(mazeEl);
     }
 
-    function addMonster(x, y, z) {
-
+    function addMonster(parentEl, row, column, direction, color = "yellow") {
+      const monsterEl = document.createElement("a-cylinder");
+      monsterEl.setAttribute("color", `${color}`);
+      monsterEl.setAttribute("theta-start", -150);
+      monsterEl.setAttribute("theta-length", 300);
+      monsterEl.setAttribute("side", "double");
+      monsterEl.setAttribute("monster", {
+        row: row,
+        column: column,
+        direction: direction
+      });
+      parentEl.appendChild(monsterEl);
     }
 
-    function addPlayer(parentEl, x = 0, y = 0, z = 0, a = 0, p = 0, r = 0) {
+    function addPlayer(parentEl, row, column, direction) {
       const playerEl = document.createElement("a-entity");
-
       playerEl.setAttribute("id", "player");
-      playerEl.setAttribute("player", ""); // must set attribute values
-      playerEl.setAttribute("wasd-maze", "");
+      playerEl.setAttribute("player", {
+        row: row,
+        column: column,
+        direction: direction
+      });
+      playerEl.setAttribute("wasd-maze", ""); // must set an attribute value
       playerEl.setAttribute("drone"); // sound follows player
-      playerEl.setAttribute("position", `${x} ${y} ${z}`);
-      playerEl.setAttribute("rotation", `${a} ${p} ${r}`);
 
       const cameraEl = document.createElement("a-camera");
       cameraEl.setAttribute("id", "camera");
@@ -402,11 +428,11 @@ AFRAME.registerComponent("game", {
     addMaze(gameEl, 8, 8);
     addFloor(gameEl, 40, 40, "#4FC65D", 18, 0, -18, -90, 0, 0);
     addSky(gameEl, "#ECECA0");
-    addPlayer(gameEl, 0, 0, 0);
-    // for (let m = 0; m < 1; m++) {
-    //   addMonster(0, 0, 0, gameEl);
-    // }
-
+    addPlayer(gameEl, 7, 0, direction.north); // row, column starting at 0
+    const monsters = 3;
+    for (let m = 0; m < monsters; m++) {
+      addMonster(gameEl, randInt(0, 5), randInt(0, 8), direction.north);
+    }
   }
 });
 
@@ -428,9 +454,6 @@ AFRAME.registerComponent("maze", {
 
     const rows = this.data.rows;
     const columns = this.data.columns;
-
-    const cellSize = 5;
-    const wallSize = 1;
 
     const offsetX = -0.5 * cellSize;
     const offsetZ = -(rows - 0.5) * cellSize;
@@ -477,27 +500,58 @@ AFRAME.registerComponent("maze", {
 });
 
 AFRAME.registerComponent("monster", {
+  schema: {
+    row: { default: 0 },
+    column: { default: 0 },
+    direction: { default: direction.south }
+  },
+
   init: function() {
-    this.throttled = AFRAME.utils.throttle(this.move, 1000, this);
+    this.row = this.data.row;
+    this.column = this.data.column;
+    this.direction = this.data.direction;
+    this.grid = maze.grid;
+
+    const { x, y, z } = cellToPosition(
+      this.row,
+      this.column,
+      maze.rows,
+      maze.columns,
+      cellSize
+    );
+    this.el.object3D.position.set(x, y, z);
+    this.el.object3D.rotation.set(0, (this.direction * Math.PI) / 2, 0);
+    // this.throttled = AFRAME.utils.throttle(this.move, 1000, this);
   },
 
   move: function() {},
 
   tick: function(t, dt) {
-    this.throttled();
+    // this.throttled();
   }
 });
 
 AFRAME.registerComponent("player", {
+  schema: {
+    row: { default: 0 },
+    column: { default: 0 },
+    direction: { default: direction.north }
+  },
+
   init: function() {
+    this.row = this.data.row;
+    this.column = this.data.column;
+    this.direction = this.data.direction;
     this.grid = maze.grid;
-
-    this.row = this.grid.length - 1;
-    this.column = 0;
-    this.direction = direction.north;
-
-    this.el.object3D.position.set(0, 0, 0);
-    this.el.object3D.rotation.set(0, 0, 0);
+    const { x, y, z } = cellToPosition(
+      this.row,
+      this.column,
+      maze.rows,
+      maze.columns,
+      cellSize
+    );
+    this.el.object3D.position.set(x, y, z);
+    this.el.object3D.rotation.set(0, (this.direction * Math.PI) / 2, 0);
     // this.throttled = AFRAME.utils.throttle(this.move, 1000, this);
   },
 
@@ -540,16 +594,16 @@ AFRAME.registerComponent("player", {
     console.log(`moving ${dir}`);
     if (dir === direction.north) {
       this.row = this.row - 1;
-      this.el.object3D.position.z += (dir - 1) * 5;
+      this.el.object3D.position.z += (dir - 1) * cellSize;
     } else if (dir === direction.south) {
       this.row = this.row + 1;
-      this.el.object3D.position.z += (dir - 1) * 5;
+      this.el.object3D.position.z += (dir - 1) * cellSize;
     } else if (dir === direction.east) {
       this.column = this.column + 1;
-      this.el.object3D.position.x += (-dir + 2) * 5;
+      this.el.object3D.position.x += (-dir + 2) * cellSize;
     } else if (dir === direction.west) {
       this.column = this.column - 1;
-      this.el.object3D.position.x += (-dir + 2) * 5;
+      this.el.object3D.position.x += (-dir + 2) * cellSize;
     }
   },
 
