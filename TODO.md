@@ -9,6 +9,8 @@
 - shader iteration 2
 - sound iteration 2
 - monsters iteration 2
+
+- camera direction vs player direction
 - adapt random generator / seed
 - monster / player interaction
 - final position (end)

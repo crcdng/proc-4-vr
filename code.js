@@ -382,7 +382,13 @@ AFRAME.registerComponent("game", {
       parentEl.appendChild(mazeEl);
     }
 
-    function addMonster(parentEl, row, column, direction, material = "color: red") {
+    function addMonster(
+      parentEl,
+      row,
+      column,
+      direction,
+      material = "color: red"
+    ) {
       const monsterEl = document.createElement("a-cylinder");
       monsterEl.setAttribute("material", `${material}`);
       monsterEl.setAttribute("theta-start", -150);
@@ -427,12 +433,32 @@ AFRAME.registerComponent("game", {
     sceneEl.appendChild(gameEl); // has to be attached first(!)
 
     addMaze(gameEl, 8, 8);
-    addFloor(gameEl, 40, 40, "shader: floor; color: red; opacity: 0.7; transparent: true", 18, 0, -18, -90, 0, 0);
-    addSky(gameEl, "shader: sky; color: yellow; opacity: 0.7; transparent: true");
+    addFloor(
+      gameEl,
+      40,
+      40,
+      "shader: floor; color: red; opacity: 0.7; transparent: true",
+      18,
+      0,
+      -18,
+      -90,
+      0,
+      0
+    );
+    addSky(
+      gameEl,
+      "shader: sky; color: yellow; opacity: 0.7; transparent: true"
+    );
     addPlayer(gameEl, 7, 0, direction.north); // row, column starting at 0
     const monsters = 3;
     for (let m = 0; m < monsters; m++) {
-      addMonster(gameEl, randInt(0, 5), randInt(0, 8), direction.north, "shader: monster; color: #ff9002; opacity: 0.7; transparent: true");
+      addMonster(
+        gameEl,
+        randInt(0, 5),
+        randInt(0, 8),
+        direction.north,
+        "shader: monster; color: #ff9002; opacity: 0.7; transparent: true"
+      );
     }
   }
 });
@@ -449,8 +475,14 @@ AFRAME.registerComponent("maze", {
     function addBlock(x, y, z) {
       const newWallEl = document.createElement("a-entity");
       newWallEl.setAttribute("id", "wall");
-      newWallEl.setAttribute("geometry", "primitive: box; height: 2; width: 1; depth: 1");
-      newWallEl.setAttribute("material", "shader: wall; color: black; opacity: 0.7");
+      newWallEl.setAttribute(
+        "geometry",
+        "primitive: box; height: 2; width: 1; depth: 1"
+      );
+      newWallEl.setAttribute(
+        "material",
+        "shader: wall; color: black; opacity: 0.7"
+      );
       newWallEl.setAttribute("class", "cursor-listener");
       newWallEl.object3D.position.set(x, y, z);
       sceneEl.appendChild(newWallEl);
@@ -929,56 +961,60 @@ AFRAME.registerComponent("wasd-maze", {
 
 AFRAME.registerShader("floor", {
   schema: {
-    color: {type: 'color', is: 'uniform', default: 'red'},
-    opacity: {type: 'number', is: 'uniform', default: 1.0}
+    u_color: { type: "color", is: "uniform", default: "red" },
+    u_opacity: { type: "number", is: "uniform", default: 1.0 },
+    u_time: { type: "time", is: "uniform" }
   },
   raw: false,
   fragmentShader: `
     precision mediump float;
 
-    uniform vec3 color;
-    uniform float opacity;
+    uniform vec3 u_color;
+    uniform float u_opacity;
+    uniform float u_time;
 
     void main () {
-      gl_FragColor = vec4(color, opacity);
+      gl_FragColor = vec4(abs(sin(u_time*0.00001)), abs(sin(1.0+u_time*0.0001)), abs(sin(2.0+u_time*0.00001)), u_opacity);
     }
   `
 });
 
 AFRAME.registerShader("monster", {
   schema: {
-    color: {type: 'color', is: 'uniform', default: 'red'},
-    opacity: {type: 'number', is: 'uniform', default: 1.0},
-    rnd: { type: "number", is: "uniform", default: srand() },
-    t: { type: "time", is: "uniform" }
+    u_color: { type: "color", is: "uniform", default: "red" },
+    u_opacity: { type: "number", is: "uniform", default: 1.0 },
+    u_rnd: { type: "number", is: "uniform", default: srand() },
+    u_time: { type: "time", is: "uniform" }
   },
   raw: false,
   fragmentShader: `
     precision mediump float;
 
-    uniform vec3 color;
-    uniform float opacity;
+    uniform vec3 u_color;
+    uniform float u_opacity;
 
     void main () {
-      gl_FragColor = vec4(color, opacity);
+      gl_FragColor = vec4(u_color, u_opacity);
     }
   `
 });
 
 AFRAME.registerShader("sky", {
   schema: {
-    color: {type: 'color', is: 'uniform', default: 'yellow'},
-    opacity: {type: 'number', is: 'uniform', default: 1.0}
+    u_color: { type: "color", is: "uniform", default: "yellow" },
+    u_opacity: { type: "number", is: "uniform", default: 1.0 },
+    u_time: { type: "time", is: "uniform" }
   },
   raw: false,
   fragmentShader: `
     precision mediump float;
 
-    uniform vec3 color;
-    uniform float opacity;
+    uniform vec3 u_color;
+    uniform float u_opacity;
+    uniform float u_time;
 
     void main () {
-      gl_FragColor = vec4(color, opacity);
+      gl_FragColor = vec4(abs(1.0-sin(u_time*0.00001)*0.5), abs(1.0-sin(1.0+u_time*0.0001)*0.5), abs(1.0-sin(2.0+u_time*0.00001)*0.5), u_opacity);
     }
   `,
   vertexShader: `
@@ -993,29 +1029,28 @@ AFRAME.registerShader("sky", {
 
 AFRAME.registerShader("wall", {
   schema: {
-    color: { type: "color", is: "uniform", default: "black" },
-    opacity: { type: "number", is: "uniform", default: 1.0 },
-    rnd: { type: "number", is: "uniform", default: srand() },
-    t: { type: "time", is: "uniform" }
+    u_color: { type: "color", is: "uniform", default: "black" },
+    u_opacity: { type: "number", is: "uniform", default: 1.0 },
+    u_rnd: { type: "number", is: "uniform", default: srand() },
+    u_time: { type: "time", is: "uniform" }
   },
   raw: false,
   fragmentShader: `
     precision mediump float;
     varying vec2 vUv;
 
-    uniform vec3 color;
-    uniform float opacity;
-    uniform float rnd;
-    uniform float t;
+    uniform vec3 u_color;
+    uniform float u_opacity;
+    uniform float u_rnd;
+    uniform float u_time;
 
     void main () {
-      float time = t / 1000.0;
+      float time = u_time / 1000.0;
       gl_FragColor = mix(
-        vec4(mod(vUv , 0.05) * rnd * 20.0, 1.0, 1.0),
-        vec4(color, 1.0),
+        vec4(mod(vUv , 0.05) * u_rnd * 20.0, 1.0, 1.0),
+        vec4(u_color, 1.0),
         sin(time)
       );
-      // gl_FragColor = vec4(color, opacity);
 
     }
   `,
