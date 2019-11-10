@@ -5,10 +5,32 @@
     <title>procprocprocproc</title>
     <script src="https://aframe.io/releases/0.9.2/aframe.min.js"></script>
     <script src="code.js"></script>
-  </head>
+    <style>
+      body {
+        font-family: Helvetica, Sans-Serif;
+        background-color: #EEEEEE;
+        text-align: center
+      }
+      div#scene {
+        margin-left: auto;
+        margin-right: auto;
+        width: 800px;
+      }
+      a-scene {
+        height: 480px;
+        width: 800px;
+      }
+        </style>
+      </head>
   <body>
-    <a-scene>
-      <a-entity game></a-entity>
-    </a-scene>
+    <h1>procprocprocproc (proc<sup>4</sup>)</h1>
+    <div id="scene">
+      <a-scene embedded>
+        <a-entity game></a-entity>
+      </a-scene>
+    </div>
+    <p>W: forward, S: backward, A: rotate left, D: rotate right</p>
+    <p>Made during <a href="https://itch.io/jam/procjam">Procjam 2019</a> - work in progress - see <a href="https://github.com/i3games/proc-4">https://github.com/i3games/proc-4</a></p>
+    <p>by <a href=https://twitter.com/crcdng>@crcdng</a></p>
   </body>
 </html>

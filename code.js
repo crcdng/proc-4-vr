@@ -347,7 +347,7 @@ AFRAME.registerComponent("drone", {
 });
 
 AFRAME.registerComponent("game", {
-  // dependencies: ["maze", "player", "monster", "wasd-maze"],
+  dependencies: ["drone"], // make sure sound is initialized fist
 
   init: function() {
     const sceneEl = document.querySelector("a-scene");
@@ -387,18 +387,21 @@ AFRAME.registerComponent("game", {
       row,
       column,
       direction,
+      height = 1,
       material = "color: red"
     ) {
       const monsterEl = document.createElement("a-cylinder");
       monsterEl.setAttribute("material", `${material}`);
       monsterEl.setAttribute("theta-start", -150);
       monsterEl.setAttribute("theta-length", 300);
+      monsterEl.setAttribute("height", height);
       monsterEl.setAttribute("side", "double");
       monsterEl.setAttribute("monster", {
         row: row,
         column: column,
-        direction: direction
-      });
+        direction: direction,
+        height: height
+      }); // returns asynchronously after the scene is initialized (!)
       parentEl.appendChild(monsterEl);
     }
 
@@ -432,6 +435,7 @@ AFRAME.registerComponent("game", {
 
     sceneEl.appendChild(gameEl); // has to be attached first(!)
 
+    // initialize game elements
     addMaze(gameEl, 8, 8);
     addFloor(
       gameEl,
@@ -447,7 +451,7 @@ AFRAME.registerComponent("game", {
     );
     addSky(
       gameEl,
-      "shader: sky; color: yellow; opacity: 0.7; transparent: true"
+      "shader: sky; u_color: black; u_opacity: 0.7; transparent: true"
     );
     addPlayer(gameEl, 7, 0, direction.north); // row, column starting at 0
     const monsters = 3;
@@ -457,6 +461,7 @@ AFRAME.registerComponent("game", {
         randInt(0, 5),
         randInt(0, 8),
         direction.north,
+        (m === 0 ? 1.8 : m * 5), // height: 1.8, 5, 10
         "shader: monster; color: #ff9002; opacity: 0.7; transparent: true"
       );
     }
@@ -481,7 +486,7 @@ AFRAME.registerComponent("maze", {
       );
       newWallEl.setAttribute(
         "material",
-        "shader: wall; color: black; opacity: 0.7"
+        "shader: wall; u_color: black; u_opacity: 0.7"
       );
       newWallEl.setAttribute("class", "cursor-listener");
       newWallEl.object3D.position.set(x, y, z);
@@ -539,13 +544,15 @@ AFRAME.registerComponent("monster", {
   schema: {
     row: { default: 0 },
     column: { default: 0 },
-    direction: { default: direction.south }
+    direction: { default: direction.south },
+    height: { default: 1 },
   },
 
   init: function() {
     this.row = this.data.row;
     this.column = this.data.column;
     this.direction = this.data.direction;
+    this.height = this.data.height;
     this.grid = maze.grid;
 
     const { x, y, z } = cellToPosition(
@@ -554,8 +561,10 @@ AFRAME.registerComponent("monster", {
       maze.rows,
       maze.columns,
       cellSize
-    );
-    this.el.object3D.position.set(x, y, z);
+    ); // retuns 0 for y by default
+
+    // correct for vertical placement
+    this.el.object3D.position.set(x, this.height/2, z);
     this.el.object3D.rotation.set(0, (this.direction * Math.PI) / 2, 0);
     // this.throttled = AFRAME.utils.throttle(this.move, 1000, this);
   },
@@ -1014,7 +1023,7 @@ AFRAME.registerShader("sky", {
     uniform float u_time;
 
     void main () {
-      gl_FragColor = vec4(abs(1.0-sin(u_time*0.00001)*0.5), abs(1.0-sin(1.0+u_time*0.0001)*0.5), abs(1.0-sin(2.0+u_time*0.00001)*0.5), u_opacity);
+      gl_FragColor = vec4(u_color.r * abs(1.0-sin(u_time*0.001)*0.5), u_color.g * abs(1.0-sin(1.0+u_time*0.001)*0.5), u_color.b * abs(1.0-sin(2.0+u_time*0.001)*0.5), u_opacity);
     }
   `,
   vertexShader: `
