@@ -1,5 +1,6 @@
 /* global AFRAME */
 
+// JavaScript does not have a seeded random function
 function mulberry(a = Date.now()) {
   return function() {
     a += 0x6d2b79f5;
@@ -40,7 +41,7 @@ class Cell {
     this.east = null;
   }
 
-  distances() {
+  distances() { // Dijstra
     const distances = new Map([[this, 0]]);
     let frontier = [this];
     while (frontier.length > 0) {
@@ -70,13 +71,12 @@ class Cell {
     return this.links.has(cell);
   }
 
+  // do not call a JavaScript method "links"
   linkedCells() {
-    // do not call a JS method "links"
     return this.links.keys();
   }
 
-  neighbours() {
-    // British English
+  neighbours() {     // British English
     const list = [];
     if (this.north != null) {
       list.push(this.north);
@@ -150,7 +150,7 @@ class Grid {
   contentsOf(cell) {
     const dist = this.distances;
     if (dist != null && dist.has(cell)) {
-      return dist.get(cell).toString(36); // Integer 36
+      return dist.get(cell).toString(36); // Integer mod 36
     } else {
       return " ";
     }
@@ -201,6 +201,8 @@ class Grid {
 }
 
 let maze; // shared between components
+
+// this is drone by Kris Slyka https://twitter.com/KrisSlyka
 
 AFRAME.registerComponent("drone", {
   init: function() {
@@ -270,8 +272,6 @@ AFRAME.registerComponent("drone", {
 
       const freq =
         Math.pow(2, (36 + steps[note] + 12 * octave - 69) / 12) * 440;
-
-      // console.log("Adding Drone: " + length.toFixed(2) + " / " + freq.toFixed(2));
 
       const oscillatorL = audioCtx.createOscillator();
       oscillatorL.type = "sawtooth";
@@ -461,7 +461,7 @@ AFRAME.registerComponent("game", {
         randInt(0, 5),
         randInt(0, 8),
         direction.north,
-        (m === 0 ? 1.8 : m * 5), // height: 1.8, 5, 10
+        m === 0 ? 1.8 : m * 5, // height: 1.8, 5, 10
         "shader: monster; color: #ff9002; opacity: 0.7; transparent: true"
       );
     }
@@ -545,7 +545,7 @@ AFRAME.registerComponent("monster", {
     row: { default: 0 },
     column: { default: 0 },
     direction: { default: direction.south },
-    height: { default: 1 },
+    height: { default: 1 }
   },
 
   init: function() {
@@ -564,15 +564,54 @@ AFRAME.registerComponent("monster", {
     ); // retuns 0 for y by default
 
     // correct for vertical placement
-    this.el.object3D.position.set(x, this.height/2, z);
+    this.el.object3D.position.set(x, this.height / 2, z);
     this.el.object3D.rotation.set(0, (this.direction * Math.PI) / 2, 0);
-    // this.throttled = AFRAME.utils.throttle(this.move, 1000, this);
+    this.throttled = AFRAME.utils.throttle(this.move, 5000, this); // call move() every 5 second
   },
 
-  move: function() {},
+  move: function () {
+    const dir = this.moveDirection();  
+    if (dir === direction.north) {
+      this.row = this.row - 1;
+      this.el.object3D.position.z += (dir - 1) * cellSize;
+    } else if (dir === direction.south) {
+      this.row = this.row + 1;
+      this.el.object3D.position.z += (dir - 1) * cellSize;
+    } else if (dir === direction.east) {
+      this.column = this.column + 1;
+      this.el.object3D.position.x += (-dir + 2) * cellSize;
+    } else if (dir === direction.west) {
+      this.column = this.column - 1;
+      this.el.object3D.position.x += (-dir + 2) * cellSize;
+    }
+  },
+
+  moveDirection: function() {
+    const row = this.row;
+    const column = this.column;
+    const loc = this.grid[row][column];
+    const possibleDirections = [];
+    for (let { row: linkedRow, column: linkedColumn } of loc.linkedCells()) {
+      if (row > linkedRow) {
+        possibleDirections.push(direction.north);
+      } else if (row < linkedRow) {
+        possibleDirections.push(direction.south);
+      } else if (column > linkedColumn) {
+        possibleDirections.push(direction.west);
+      } else if (column < linkedColumn) {
+        possibleDirections.push(direction.east);
+      }
+      console.log(
+        row,
+        column,
+        possibleDirections
+      );
+    }
+    return sample(possibleDirections);
+  },
 
   tick: function(t, dt) {
-    // this.throttled();
+    this.throttled(); // call move() every 5 second
   }
 });
 
@@ -598,6 +637,23 @@ AFRAME.registerComponent("player", {
     this.el.object3D.position.set(x, y, z);
     this.el.object3D.rotation.set(0, (this.direction * Math.PI) / 2, 0);
     // this.throttled = AFRAME.utils.throttle(this.move, 1000, this);
+  },
+
+  move: function(dir) {
+    console.log(`moving ${dir}`);
+    if (dir === direction.north) {
+      this.row = this.row - 1;
+      this.el.object3D.position.z += (dir - 1) * cellSize;
+    } else if (dir === direction.south) {
+      this.row = this.row + 1;
+      this.el.object3D.position.z += (dir - 1) * cellSize;
+    } else if (dir === direction.east) {
+      this.column = this.column + 1;
+      this.el.object3D.position.x += (-dir + 2) * cellSize;
+    } else if (dir === direction.west) {
+      this.column = this.column - 1;
+      this.el.object3D.position.x += (-dir + 2) * cellSize;
+    }
   },
 
   moveDirection: function(forward = true) {
@@ -635,25 +691,6 @@ AFRAME.registerComponent("player", {
     return null;
   },
 
-  move: function(dir) {
-    console.log(`moving ${dir}`);
-    if (dir === direction.north) {
-      this.row = this.row - 1;
-      this.el.object3D.position.z += (dir - 1) * cellSize;
-    } else if (dir === direction.south) {
-      this.row = this.row + 1;
-      this.el.object3D.position.z += (dir - 1) * cellSize;
-    } else if (dir === direction.east) {
-      this.column = this.column + 1;
-      this.el.object3D.position.x += (-dir + 2) * cellSize;
-    } else if (dir === direction.west) {
-      this.column = this.column - 1;
-      this.el.object3D.position.x += (-dir + 2) * cellSize;
-    }
-  },
-
-  rotate: function() {},
-
   left: function() {
     this.direction =
       this.direction === 0 ? directionValues.length - 1 : this.direction - 1;
@@ -667,7 +704,7 @@ AFRAME.registerComponent("player", {
     this.el.object3D.rotateY(-Math.PI / 2);
   },
 
-  forwards: function() {
+  forward: function() {
     const moveDirection = this.moveDirection(true);
     if (moveDirection != null) {
       this.move(moveDirection);
@@ -961,7 +998,7 @@ AFRAME.registerComponent("wasd-maze", {
       this.el.components.player.left();
     }
     if (code == "KeyW" || code == "ArrowUp") {
-      this.el.components.player.forwards();
+      this.el.components.player.forward();
     } else if (code == "KeyS" || code == "ArrowDown") {
       this.el.components.player.back();
     }

@@ -24,6 +24,8 @@ Milestones
 - Milestone 1 in November 2019 for Procjam https://itch.io/jam/procjam
 - Started in August/September 2019, originally planned for JS13k https://js13kgames.com/webxr
 
+
+
 Resources used / inspired by:
 
 drone by Kris Slyka https://twitter.com/KrisSlyka  
@@ -31,6 +33,7 @@ http://www.mazesforprogrammers.com by Jamis Buck https://twitter.com/jamis
 https://thebookofshaders.com by Patricio Gonzalez Vivo https://twitter.com/patriciogv & Jen Lowe
 https://www.shadertoy.com/view/4dlyDS by https://www.shadertoy.com/user/pickledchickenfoot  
 https://stackoverflow.com/questions/521295/seeding-the-random-number-generator-in-javascript  
+Escape from the Mindmaster by Dennis Caswell https://en.wikipedia.org/wiki/Escape_from_the_Mindmaster
 Rioji Ikeda :)
 
 Other resources and tools:
