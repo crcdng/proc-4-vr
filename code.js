@@ -643,9 +643,33 @@ AFRAME.registerComponent("player", {
     this.throttled = AFRAME.utils.throttle(this.check, 100, this);
   },
 
-  check () {
+  check: function () {
     if (this.gameover) { return; }
-    if (this.row === 0 && this.column === maze.columns - 1 && this.direction === direction.east) {
+
+    for (let m of this.el.sceneEl.querySelectorAll('[monster]')) {
+      if (this.row === m.components.monster.row && this.column === m.components.monster.column) {
+        // TODO get monster positions and compare
+        console.log("game over - died");
+        this.gameover = true;
+        const textEl = document.createElement("a-plane");
+        textEl.setAttribute("src", "#died");
+        textEl.setAttribute("width", "3");
+        textEl.setAttribute("transparent", "true");
+        textEl.setAttribute("height", "2");
+        textEl.setAttribute("position", "0 1 -2");
+        this.el.appendChild(textEl);
+        window.setTimeout(() => {
+          location.reload();
+        }, 2000);
+        return;
+      }
+    }
+
+    if (
+      this.row === 0 &&
+      this.column === maze.columns - 1 &&
+      this.direction === direction.east
+    ) {
       console.log("game over - escaped");
       this.gameover = true;
       const textEl = document.createElement("a-plane");
@@ -653,20 +677,14 @@ AFRAME.registerComponent("player", {
       textEl.setAttribute("width", "3");
       textEl.setAttribute("transparent", "true");
       textEl.setAttribute("height", "2");
-      textEl.setAttribute("position", "0 1 -3");
+      textEl.setAttribute("position", "0 1 -2");
       this.el.appendChild(textEl);
-      window.setTimeout(() => { location.reload(); }, 2000);
-    } else if (false) { // TODO get monster positions and compare
-      console.log("game over - died");
-      this.gameover = true;
-      const textEl = document.createElement("a-plane");
-      textEl.setAttribute("src", "#died");
-      textEl.setAttribute("width", "3");
-      textEl.setAttribute("transparent", "true");
-      textEl.setAttribute("height", "2");
-      textEl.setAttribute("position", "0 1 -3");
-      this.el.appendChild(textEl);
-      window.setTimeout(() => { location.reload(); }, 2000);
+      window.setTimeout(() => {
+        location.reload();
+      }, 2000);
+    }  {
+
+
     }
   },
 

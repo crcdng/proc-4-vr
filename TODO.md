@@ -5,7 +5,6 @@
 
 #### To Do
 
-- monster / player interaction
 - adapt random generator / seed
 - monsters iteration 2
 - sound iteration 3
@@ -30,6 +29,7 @@
 
 #### Done
 
+- monster / player interaction
 - final position (end)
 - sound iteration 2
 - shader iteration 2
