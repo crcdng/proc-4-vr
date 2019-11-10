@@ -2,6 +2,7 @@
 
 // JavaScript does not have a seeded random function
 function mulberry(a = Date.now()) {
+  console.log(`the random seed: ${a}`);
   return function() {
     a += 0x6d2b79f5;
     let t = a;
@@ -570,7 +571,7 @@ AFRAME.registerComponent("monster", {
   },
 
   move: function () {
-    const dir = this.moveDirection();  
+    const dir = this.moveDirection();
     if (dir === direction.north) {
       this.row = this.row - 1;
       this.el.object3D.position.z += (dir - 1) * cellSize;
@@ -601,11 +602,11 @@ AFRAME.registerComponent("monster", {
       } else if (column < linkedColumn) {
         possibleDirections.push(direction.east);
       }
-      console.log(
-        row,
-        column,
-        possibleDirections
-      );
+      // console.log(
+      //   row,
+      //   column,
+      //   possibleDirections
+      // );
     }
     return sample(possibleDirections);
   },
@@ -1009,6 +1010,8 @@ AFRAME.registerShader("floor", {
   schema: {
     u_color: { type: "color", is: "uniform", default: "red" },
     u_opacity: { type: "number", is: "uniform", default: 1.0 },
+    u_resolution: { type: "vec2", is: "uniform", default: { x: 700.0, y: 700.0 } },
+    u_rnd: { type: "number", is: "uniform", default: srand() },
     u_time: { type: "time", is: "uniform" }
   },
   raw: false,
@@ -1017,10 +1020,25 @@ AFRAME.registerShader("floor", {
 
     uniform vec3 u_color;
     uniform float u_opacity;
+    uniform vec2 u_resolution;
+    uniform float u_rnd;
     uniform float u_time;
 
+    float box(in vec2 st, in vec2 size){
+      size = vec2(0.5) - size * 0.5;
+      vec2 uv = smoothstep(size, size + vec2(0.001), st);
+      uv *= smoothstep(size, size+vec2(0.001), vec2(1.0) - st);
+      return uv.x * uv.y;
+    }
+
     void main () {
-      gl_FragColor = vec4(abs(sin(u_time*0.00001)), abs(sin(1.0+u_time*0.0001)), abs(sin(2.0+u_time*0.00001)), u_opacity);
+      vec2 st = gl_FragCoord.xy / u_resolution;
+      vec3 color = vec3(0.0);
+      vec2 translate = vec2(1.0 - tan(u_time));
+      st += translate * u_rnd;
+      color = vec3(0.0, 0.0, st.x * st.x * st.y * st.y * 0.02);
+      color += vec3(box(st, vec2(1.95, 0.15)));
+      gl_FragColor = vec4(color, 1.0);
     }
   `
 });
@@ -1029,6 +1047,7 @@ AFRAME.registerShader("monster", {
   schema: {
     u_color: { type: "color", is: "uniform", default: "red" },
     u_opacity: { type: "number", is: "uniform", default: 1.0 },
+    u_resolution: { type: "vec2", is: "uniform", default: { x: 700.0, y: 700.0 } },
     u_rnd: { type: "number", is: "uniform", default: srand() },
     u_time: { type: "time", is: "uniform" }
   },
@@ -1038,9 +1057,17 @@ AFRAME.registerShader("monster", {
 
     uniform vec3 u_color;
     uniform float u_opacity;
+    uniform vec2 u_resolution;
+    uniform float u_rnd;
+    uniform float u_time;
 
     void main () {
-      gl_FragColor = vec4(u_color, u_opacity);
+      vec2 st = gl_FragCoord.xy / u_resolution;
+      st *= 10.0;
+      vec2 ipos = floor(st);
+      vec3 color = vec3(u_rnd * u_color * st.y);
+
+      gl_FragColor = vec4(color, u_opacity);
     }
   `
 });
@@ -1049,6 +1076,8 @@ AFRAME.registerShader("sky", {
   schema: {
     u_color: { type: "color", is: "uniform", default: "yellow" },
     u_opacity: { type: "number", is: "uniform", default: 1.0 },
+    u_resolution: { type: "vec2", is: "uniform", default: { x: 700.0, y: 700.0 } },
+    u_rnd: { type: "number", is: "uniform", default: srand() },
     u_time: { type: "time", is: "uniform" }
   },
   raw: false,
@@ -1056,20 +1085,18 @@ AFRAME.registerShader("sky", {
     precision mediump float;
 
     uniform vec3 u_color;
+    uniform vec2 u_resolution;
     uniform float u_opacity;
+    uniform float u_rnd;
     uniform float u_time;
 
     void main () {
-      gl_FragColor = vec4(u_color.r * abs(1.0-sin(u_time*0.001)*0.5), u_color.g * abs(1.0-sin(1.0+u_time*0.001)*0.5), u_color.b * abs(1.0-sin(2.0+u_time*0.001)*0.5), u_opacity);
+      vec2 st = gl_FragCoord.xy/u_resolution;
+      float pct = 0.0;
+      pct = distance(st, vec2(0.5));
+      vec3 color = vec3(0.99 - pct);
+      gl_FragColor = vec4(color * abs(sin(1.0 + u_time * u_rnd * 0.01)), 1.0);
     }
-  `,
-  vertexShader: `
-  varying vec2 vUv;
-
-  void main() {
-    vUv = uv;
-    gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
-  }
   `
 });
 
@@ -1077,25 +1104,48 @@ AFRAME.registerShader("wall", {
   schema: {
     u_color: { type: "color", is: "uniform", default: "black" },
     u_opacity: { type: "number", is: "uniform", default: 1.0 },
+    u_resolution: { type: "vec2", is: "uniform", default: { x: 700.0, y: 700.0 } },
     u_rnd: { type: "number", is: "uniform", default: srand() },
     u_time: { type: "time", is: "uniform" }
   },
   raw: false,
   fragmentShader: `
+    #define PI 3.1415926538
     precision mediump float;
     varying vec2 vUv;
 
     uniform vec3 u_color;
     uniform float u_opacity;
+    uniform vec2 u_resolution;
     uniform float u_rnd;
     uniform float u_time;
 
+    float box(in vec2 st, in vec2 size){
+      size = vec2(0.5) - size * 0.5;
+      vec2 uv = smoothstep(size, size + vec2(0.001), st);
+      uv *= smoothstep(size, size+vec2(0.001), vec2(1.0) - st);
+      return uv.x * uv.y;
+    }
+
+    mat2 rotate2d(float angle){
+      return mat2(cos(angle), -sin(angle), sin(angle), cos(angle));
+    }
+
     void main () {
+      vec2 st = gl_FragCoord.xy / u_resolution;
       float time = u_time / 1000.0;
+
+      vec3 color = vec3(0.0);
+      vec2 translate = vec2(1.0-cos(u_time));
+      st += translate * u_rnd;
+      st += rotate2d( sin(u_time)*PI ) * st;
+      color = vec3(0.0, 0.0, st.x * st.x * st.y * st.y * 0.02);
+      color += vec3(box(st, vec2(1.95, 0.15)));
+
       gl_FragColor = mix(
-        vec4(mod(vUv , 0.05) * u_rnd * 20.0, 1.0, 1.0),
-        vec4(u_color, 1.0),
-        sin(time)
+        vec4(mod(vUv , 1.0) * u_rnd * 12.0, 1.0, 1.0),
+        vec4(color, 1.0),
+        abs(tan(time))
       );
 
     }

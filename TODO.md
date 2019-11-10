@@ -2,26 +2,26 @@
 
 #### Doing
 
-- shader iteration 2
+- sound iteration 2
 
 #### To Do
 
-- sound iteration 2
 - adapt random generator / seed
-- add epilepsy warning
 
 #### Optional / Later
 
-- start screen w/ audio trigger
 - monster / player interaction
 - final position (end)
+- shader iteration 3
 - tests on chrome, safari, chrome android, safari ios
 - monsters iteration 2
 - camera direction vs player direction
-- animate player movement
+- animate player and monster movement
+- start screen w/ audio trigger
 - player movement in cardboard (fuse cursor w/ limited raycaster)
 - player movement with VR / 6DOF controller support
 - better monster movement (pursuing player with Dijkstra)
+- interesting stuff in maze 
 - better maze algorithm
 - reorganise code
 - clean up WASD code
@@ -31,6 +31,8 @@
 
 #### Done
 
+- shader iteration 2
+- add epilepsy warning
 - simple (random) monster movement
 - LICENSE
 - embed in HTML page w/ instructions
