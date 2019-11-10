@@ -42,7 +42,8 @@ class Cell {
     this.east = null;
   }
 
-  distances() { // Dijstra
+  distances() {
+    // Dijstra
     const distances = new Map([[this, 0]]);
     let frontier = [this];
     while (frontier.length > 0) {
@@ -77,7 +78,8 @@ class Cell {
     return this.links.keys();
   }
 
-  neighbours() {     // British English
+  neighbours() {
+    // British English
     const list = [];
     if (this.north != null) {
       list.push(this.north);
@@ -215,13 +217,13 @@ AFRAME.registerComponent("drone", {
     compressor.threshold.value = -50;
     compressor.knee.value = 40;
     compressor.ratio.value = 12;
-    compressor.attack.value = 0;
-    compressor.release.value = 0.25;
+    compressor.attack.value = 0.08;
+    compressor.release.value = 0.21;
 
     compressor.connect(audioCtx.destination);
 
     const delay = audioCtx.createDelay();
-    delay.delayTime.value = 2.5;
+    delay.delayTime.value = 0.77;
 
     const delayFilter = audioCtx.createBiquadFilter();
     delayFilter.type = "lowpass";
@@ -229,7 +231,7 @@ AFRAME.registerComponent("drone", {
     delayFilter.frequency.value = 500;
 
     const delayGain = audioCtx.createGain();
-    delayGain.gain.value = 0.5;
+    delayGain.gain.value = 0.9;
 
     delay.connect(delayGain);
     delayGain.connect(delayFilter);
@@ -240,7 +242,7 @@ AFRAME.registerComponent("drone", {
     reverbDelayA.delayTime.value = 0.82;
 
     const reverbDelayB = audioCtx.createDelay();
-    reverbDelayB.delayTime.value = 0.73;
+    reverbDelayB.delayTime.value = 1.73;
 
     const reverbGain = audioCtx.createGain();
     reverbGain.gain.value = 0.4;
@@ -248,7 +250,7 @@ AFRAME.registerComponent("drone", {
     const reverbFilter = audioCtx.createBiquadFilter();
     reverbFilter.type = "lowpass";
     reverbFilter.Q.value = 0;
-    reverbFilter.frequency.value = 800;
+    reverbFilter.frequency.value = 1200;
 
     const splitter = audioCtx.createChannelSplitter(2);
     const merger = audioCtx.createChannelMerger(2);
@@ -266,23 +268,23 @@ AFRAME.registerComponent("drone", {
     delayFilter.connect(reverbFilter);
 
     function addDrone() {
-      const length = 15 + srand() * 25;
+      const length = 1.0 + srand() * 3;
 
       const note = Math.floor(srand() * steps.length);
-      const octave = Math.floor(srand() * srand() * 4);
+      const octave = Math.floor(srand() * srand() * 1);
 
       const freq =
-        Math.pow(2, (36 + steps[note] + 12 * octave - 69) / 12) * 440;
+        Math.pow(2, (36 + steps[note] + 12 * octave - 69) / 12) * 120;
 
       const oscillatorL = audioCtx.createOscillator();
       oscillatorL.type = "sawtooth";
       oscillatorL.frequency.value = freq;
       oscillatorL.detune.setValueAtTime(
-        srand() * 40.0 - 20.0,
+        srand() * 4.0 - 2.0,
         audioCtx.currentTime
       );
       oscillatorL.detune.linearRampToValueAtTime(
-        srand() * 40.0 - 20.0,
+        srand() * 4.0 - 2.0,
         audioCtx.currentTime + length
       );
 
@@ -318,7 +320,7 @@ AFRAME.registerComponent("drone", {
 
       const filter = audioCtx.createBiquadFilter();
       filter.type = "lowpass";
-      filter.Q.value = srand() * 2.0;
+      filter.Q.value = srand() * 1.2;
       filter.frequency.setValueAtTime(0.0, audioCtx.currentTime);
       filter.frequency.linearRampToValueAtTime(
         freq * 1.5 + srand() * freq * 2.5,
@@ -341,7 +343,7 @@ AFRAME.registerComponent("drone", {
       oscillatorR.start();
       oscillatorR.stop(audioCtx.currentTime + length);
 
-      setTimeout(addDrone, srand() * 10000 + 2500);
+      setTimeout(addDrone, srand() * 100 + 250);
     }
     addDrone();
   }
@@ -570,7 +572,7 @@ AFRAME.registerComponent("monster", {
     this.throttled = AFRAME.utils.throttle(this.move, 5000, this); // call move() every 5 second
   },
 
-  move: function () {
+  move: function() {
     const dir = this.moveDirection();
     if (dir === direction.north) {
       this.row = this.row - 1;
@@ -641,7 +643,7 @@ AFRAME.registerComponent("player", {
   },
 
   move: function(dir) {
-    console.log(`moving ${dir}`);
+    // console.log(`moving ${dir}`);
     if (dir === direction.north) {
       this.row = this.row - 1;
       this.el.object3D.position.z += (dir - 1) * cellSize;
@@ -672,14 +674,14 @@ AFRAME.registerComponent("player", {
       } else if (column < linkedColumn) {
         possibleDirection = direction.east;
       }
-      console.log(
-        row,
-        column,
-        linkedRow,
-        linkedColumn,
-        this.direction,
-        possibleDirection
-      );
+      // console.log(
+      //   row,
+      //   column,
+      //   linkedRow,
+      //   linkedColumn,
+      //   this.direction,
+      //   possibleDirection
+      // );
       if (forward === true && this.direction === possibleDirection) {
         return this.direction;
       } else if (
@@ -695,13 +697,13 @@ AFRAME.registerComponent("player", {
   left: function() {
     this.direction =
       this.direction === 0 ? directionValues.length - 1 : this.direction - 1;
-    console.log(`new direction ${this.direction}`);
+    // console.log(`new direction ${this.direction}`);
     this.el.object3D.rotateY(Math.PI / 2);
   },
 
   right: function() {
     this.direction = (this.direction + 1) % directionValues.length;
-    console.log(`new direction ${this.direction}`);
+    // console.log(`new direction ${this.direction}`);
     this.el.object3D.rotateY(-Math.PI / 2);
   },
 
@@ -1010,7 +1012,11 @@ AFRAME.registerShader("floor", {
   schema: {
     u_color: { type: "color", is: "uniform", default: "red" },
     u_opacity: { type: "number", is: "uniform", default: 1.0 },
-    u_resolution: { type: "vec2", is: "uniform", default: { x: 700.0, y: 700.0 } },
+    u_resolution: {
+      type: "vec2",
+      is: "uniform",
+      default: { x: 700.0, y: 700.0 }
+    },
     u_rnd: { type: "number", is: "uniform", default: srand() },
     u_time: { type: "time", is: "uniform" }
   },
@@ -1047,7 +1053,11 @@ AFRAME.registerShader("monster", {
   schema: {
     u_color: { type: "color", is: "uniform", default: "red" },
     u_opacity: { type: "number", is: "uniform", default: 1.0 },
-    u_resolution: { type: "vec2", is: "uniform", default: { x: 700.0, y: 700.0 } },
+    u_resolution: {
+      type: "vec2",
+      is: "uniform",
+      default: { x: 700.0, y: 700.0 }
+    },
     u_rnd: { type: "number", is: "uniform", default: srand() },
     u_time: { type: "time", is: "uniform" }
   },
@@ -1076,7 +1086,11 @@ AFRAME.registerShader("sky", {
   schema: {
     u_color: { type: "color", is: "uniform", default: "yellow" },
     u_opacity: { type: "number", is: "uniform", default: 1.0 },
-    u_resolution: { type: "vec2", is: "uniform", default: { x: 700.0, y: 700.0 } },
+    u_resolution: {
+      type: "vec2",
+      is: "uniform",
+      default: { x: 700.0, y: 700.0 }
+    },
     u_rnd: { type: "number", is: "uniform", default: srand() },
     u_time: { type: "time", is: "uniform" }
   },
@@ -1104,7 +1118,11 @@ AFRAME.registerShader("wall", {
   schema: {
     u_color: { type: "color", is: "uniform", default: "black" },
     u_opacity: { type: "number", is: "uniform", default: 1.0 },
-    u_resolution: { type: "vec2", is: "uniform", default: { x: 700.0, y: 700.0 } },
+    u_resolution: {
+      type: "vec2",
+      is: "uniform",
+      default: { x: 700.0, y: 700.0 }
+    },
     u_rnd: { type: "number", is: "uniform", default: srand() },
     u_time: { type: "time", is: "uniform" }
   },
