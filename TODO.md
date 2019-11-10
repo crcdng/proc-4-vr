@@ -6,7 +6,6 @@
 #### To Do
 
 - monster / player interaction
-- final position (end)
 - adapt random generator / seed
 - monsters iteration 2
 - sound iteration 3
@@ -31,6 +30,7 @@
 
 #### Done
 
+- final position (end)
 - sound iteration 2
 - shader iteration 2
 - add epilepsy warning

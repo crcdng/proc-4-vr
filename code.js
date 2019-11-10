@@ -630,6 +630,7 @@ AFRAME.registerComponent("player", {
     this.column = this.data.column;
     this.direction = this.data.direction;
     this.grid = maze.grid;
+    this.gameover = false;
     const { x, y, z } = cellToPosition(
       this.row,
       this.column,
@@ -639,7 +640,34 @@ AFRAME.registerComponent("player", {
     );
     this.el.object3D.position.set(x, y, z);
     this.el.object3D.rotation.set(0, (this.direction * Math.PI) / 2, 0);
-    // this.throttled = AFRAME.utils.throttle(this.move, 1000, this);
+    this.throttled = AFRAME.utils.throttle(this.check, 100, this);
+  },
+
+  check () {
+    if (this.gameover) { return; }
+    if (this.row === 0 && this.column === maze.columns - 1 && this.direction === direction.east) {
+      console.log("game over - escaped");
+      this.gameover = true;
+      const textEl = document.createElement("a-plane");
+      textEl.setAttribute("src", "#escaped");
+      textEl.setAttribute("width", "3");
+      textEl.setAttribute("transparent", "true");
+      textEl.setAttribute("height", "2");
+      textEl.setAttribute("position", "0 1 -3");
+      this.el.appendChild(textEl);
+      window.setTimeout(() => { location.reload(); }, 2000);
+    } else if (false) { // TODO get monster positions and compare
+      console.log("game over - died");
+      this.gameover = true;
+      const textEl = document.createElement("a-plane");
+      textEl.setAttribute("src", "#died");
+      textEl.setAttribute("width", "3");
+      textEl.setAttribute("transparent", "true");
+      textEl.setAttribute("height", "2");
+      textEl.setAttribute("position", "0 1 -3");
+      this.el.appendChild(textEl);
+      window.setTimeout(() => { location.reload(); }, 2000);
+    }
   },
 
   move: function(dir) {
@@ -722,7 +750,7 @@ AFRAME.registerComponent("player", {
   },
 
   tick: function(t, dt) {
-    // this.throttled();
+    this.throttled();
   }
 });
 
